@@ -1,0 +1,378 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "$id": "studio/production-plan/1",
+ "type": "object",
+ "additionalProperties": false,
+ "required": [
+  "schema_version",
+  "film_id",
+  "script_sha256",
+  "scenes",
+  "entities",
+  "knowledge",
+  "invariants",
+  "open_issues",
+  "coverage"
+ ],
+ "properties": {
+  "schema_version": {
+   "const": "1"
+  },
+  "film_id": {
+   "type": "string"
+  },
+  "script_sha256": {
+   "type": "string"
+  },
+  "tone": {
+   "type": "object",
+   "additionalProperties": false,
+   "required": [
+    "statement",
+    "cite"
+   ],
+   "properties": {
+    "statement": {
+     "type": "string",
+     "minLength": 1,
+     "maxLength": 600
+    },
+    "cite": {
+     "type": "array",
+     "items": {
+      "type": "string"
+     },
+     "minItems": 1,
+     "description": "source span ids; nothing may be asserted without them"
+    }
+   }
+  },
+  "entities": {
+   "type": "array",
+   "items": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+     "id",
+     "kind",
+     "name",
+     "facts"
+    ],
+    "properties": {
+     "id": {
+      "type": "string"
+     },
+     "kind": {
+      "enum": [
+       "character",
+       "wardrobe",
+       "environment",
+       "prop",
+       "camera",
+       "look",
+       "voice",
+       "sound",
+       "rule"
+      ]
+     },
+     "name": {
+      "type": "string"
+     },
+     "camera_mode": {
+      "enum": [
+       "cinematic",
+       "diegetic"
+      ]
+     },
+     "facts": {
+      "type": "array",
+      "items": {
+       "type": "object",
+       "additionalProperties": false,
+       "required": [
+        "field",
+        "value",
+        "basis",
+        "cite"
+       ],
+       "properties": {
+        "field": {
+         "type": "string"
+        },
+        "value": {
+         "type": "string"
+        },
+        "basis": {
+         "enum": [
+          "stated",
+          "implied",
+          "invented"
+         ]
+        },
+        "cite": {
+         "type": "array",
+         "items": {
+          "type": "string"
+         },
+         "minItems": 1,
+         "description": "source span ids; nothing may be asserted without them"
+        }
+       }
+      }
+     }
+    }
+   }
+  },
+  "scenes": {
+   "type": "array",
+   "items": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+     "number",
+     "objective",
+     "audience_before",
+     "audience_after",
+     "emotion",
+     "beats"
+    ],
+    "properties": {
+     "number": {
+      "type": "integer"
+     },
+     "objective": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 400
+     },
+     "audience_before": {
+      "type": "string"
+     },
+     "audience_after": {
+      "type": "string"
+     },
+     "emotion": {
+      "type": "string"
+     },
+     "story_time": {
+      "type": "string"
+     },
+     "beats": {
+      "type": "array",
+      "items": {
+       "type": "object",
+       "additionalProperties": false,
+       "required": [
+        "id",
+        "what",
+        "visual_need",
+        "cite"
+       ],
+       "properties": {
+        "id": {
+         "type": "string"
+        },
+        "what": {
+         "type": "string",
+         "minLength": 1,
+         "maxLength": 400
+        },
+        "visual_need": {
+         "type": "string"
+        },
+        "question_opened": {
+         "type": "string"
+        },
+        "question_answered": {
+         "type": "string"
+        },
+        "cite": {
+         "type": "array",
+         "items": {
+          "type": "string"
+         },
+         "minItems": 1,
+         "description": "source span ids; nothing may be asserted without them"
+        }
+       }
+      },
+      "minItems": 1
+     }
+    }
+   },
+   "minItems": 1
+  },
+  "knowledge": {
+   "type": "array",
+   "items": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+     "fact",
+     "known_by",
+     "when_beat",
+     "fairness",
+     "cite"
+    ],
+    "properties": {
+     "fact": {
+      "type": "string"
+     },
+     "known_by": {
+      "type": "array",
+      "items": {
+       "type": "string"
+      }
+     },
+     "when_beat": {
+      "type": "string"
+     },
+     "fairness": {
+      "enum": [
+       "planted",
+       "revealed",
+       "withheld",
+       "red_herring"
+      ]
+     },
+     "cite": {
+      "type": "array",
+      "items": {
+       "type": "string"
+      },
+      "minItems": 1,
+      "description": "source span ids; nothing may be asserted without them"
+     }
+    }
+   }
+  },
+  "invariants": {
+   "type": "array",
+   "items": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+     "id",
+     "rule",
+     "severity",
+     "method",
+     "checker",
+     "params",
+     "cite"
+    ],
+    "properties": {
+     "id": {
+      "type": "string"
+     },
+     "rule": {
+      "type": "string"
+     },
+     "severity": {
+      "enum": [
+       "critical",
+       "major",
+       "moderate"
+      ]
+     },
+     "method": {
+      "enum": [
+       "measured",
+       "lint",
+       "inspected",
+       "human"
+      ]
+     },
+     "checker": {
+      "enum": [
+       "entity_visibility",
+       "entity_position_relation",
+       "attribute_constant",
+       "camera_pose_constant",
+       "camera_can_see",
+       "text_equals",
+       "clock_equals",
+       "order_before",
+       "screen_time",
+       "count_equals",
+       "bus_silent",
+       "silence_after",
+       "hold_duration",
+       "same_source_asset",
+       "allowlist_shots",
+       "colour_budget",
+       "free_inspection"
+      ]
+     },
+     "params": {
+      "type": "object"
+     },
+     "cite": {
+      "type": "array",
+      "items": {
+       "type": "string"
+      },
+      "minItems": 1,
+      "description": "source span ids; nothing may be asserted without them"
+     }
+    }
+   }
+  },
+  "open_issues": {
+   "type": "array",
+   "items": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+     "question",
+     "quotes",
+     "options"
+    ],
+    "properties": {
+     "question": {
+      "type": "string"
+     },
+     "quotes": {
+      "type": "array",
+      "items": {
+       "type": "string"
+      },
+      "minItems": 1
+     },
+     "options": {
+      "type": "array",
+      "items": {
+       "type": "string"
+      },
+      "minItems": 2
+     },
+     "blocks": {
+      "type": "array",
+      "items": {
+       "type": "string"
+      }
+     }
+    }
+   }
+  },
+  "coverage": {
+   "type": "object",
+   "additionalProperties": false,
+   "required": [
+    "mapped_spans",
+    "non_visual_spans",
+    "unmapped_spans"
+   ],
+   "properties": {
+    "mapped_spans": {
+     "type": "integer"
+    },
+    "non_visual_spans": {
+     "type": "integer"
+    },
+    "unmapped_spans": {
+     "const": 0
+    }
+   }
+  }
+ }
+}

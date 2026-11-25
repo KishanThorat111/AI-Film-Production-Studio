@@ -1,0 +1,20 @@
+# the user's work and secrets: never published
+data/
+private/
+*.docx
+*.pdf
+*.db
+*.db-wal
+*.db-shm
+.env*
+AI_Film_Production_Studio_*.md
+# other assistants' local settings
+.codex/
+.agents/
+AGENTS.md
+# programs and leftovers
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+*.log

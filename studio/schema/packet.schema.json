@@ -1,0 +1,180 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "$id": "studio/packet/2",
+ "type": "object",
+ "additionalProperties": false,
+ "required": [
+  "schema_version",
+  "task_id",
+  "kind",
+  "role",
+  "blind",
+  "goal",
+  "criteria",
+  "inputs",
+  "evidence_budget",
+  "stop_conditions",
+  "report_schema",
+  "action"
+ ],
+ "properties": {
+  "schema_version": {
+   "const": "2"
+  },
+  "task_id": {
+   "type": "string"
+  },
+  "kind": {
+   "enum": [
+    "make",
+    "review"
+   ]
+  },
+  "role": {
+   "type": "string"
+  },
+  "blind": {
+   "type": "boolean",
+   "description": "true: the server strips maker rationale, prompt, earlier verdicts and story context"
+  },
+  "goal": {
+   "type": "string",
+   "maxLength": 800
+  },
+  "criteria": {
+   "type": "array",
+   "minItems": 1,
+   "items": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+     "id",
+     "text",
+     "mandatory",
+     "method"
+    ],
+    "properties": {
+     "id": {
+      "type": "string"
+     },
+     "text": {
+      "type": "string"
+     },
+     "mandatory": {
+      "type": "boolean"
+     },
+     "method": {
+      "enum": [
+       "measured",
+       "inspected",
+       "human"
+      ]
+     },
+     "source_ref": {
+      "type": "string"
+     }
+    }
+   }
+  },
+  "inputs": {
+   "type": "array",
+   "items": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+     "ref",
+     "kind"
+    ],
+    "properties": {
+     "ref": {
+      "type": "string"
+     },
+     "kind": {
+      "type": "string"
+     },
+     "content_hash": {
+      "type": "string"
+     },
+     "why": {
+      "type": "string"
+     }
+    }
+   }
+  },
+  "measurements": {
+   "type": "array",
+   "items": {
+    "type": "object"
+   }
+  },
+  "prior_failures": {
+   "type": "array",
+   "items": {
+    "type": "object"
+   }
+  },
+  "lessons": {
+   "type": "array",
+   "maxItems": 5,
+   "items": {
+    "type": "object",
+    "required": [
+     "id",
+     "statement"
+    ],
+    "properties": {
+     "id": {
+      "type": "string"
+     },
+     "statement": {
+      "type": "string"
+     }
+    }
+   }
+  },
+  "evidence_budget": {
+   "type": "object",
+   "required": [
+    "max_visual_tokens"
+   ],
+   "properties": {
+    "max_visual_tokens": {
+     "type": "integer",
+     "minimum": 0
+    },
+    "max_views": {
+     "type": "integer",
+     "minimum": 0
+    }
+   }
+  },
+  "stop_conditions": {
+   "type": "array",
+   "items": {
+    "type": "string"
+   }
+  },
+  "report_schema": {
+   "const": "studio/report/2"
+  },
+  "action": {
+   "type": "string"
+  },
+  "gate": {
+   "type": "string"
+  },
+  "target_type": {
+   "type": "string"
+  },
+  "target_id": {
+   "type": "string"
+  },
+  "spend_envelope_id": {
+   "type": [
+    "string",
+    "null"
+   ],
+   "description": "Only image-maker packets may carry one."
+  }
+ }
+}

@@ -1,0 +1,127 @@
+{
+ "schema_version": "1",
+ "package": "TF-VP-NARR",
+ "section": "Test package TF-VP-NARR",
+ "method": "per_line_tts",
+ "voice_bindings": [
+  {
+   "speaker": "NARRATOR",
+   "binding_id": "vb_narrator",
+   "voice_name": "test voice",
+   "provider_voice_id": "recorded from your casting choice"
+  }
+ ],
+ "model": "eleven_v4",
+ "settings": {
+  "stability": 0.5,
+  "similarity_boost": 0.8,
+  "style": 0,
+  "speed": 0.95
+ },
+ "output_format": {
+  "requested": "mp3_44100_128",
+  "minimum": "mp3_44100_128"
+ },
+ "seed": null,
+ "lines": [
+  {
+   "line_id": "T1-N1",
+   "speaker": "NARRATOR",
+   "text": "From the gallery you could see every bed.",
+   "spoken_text": "From the gallery you could see every bed.",
+   "delivery": {
+    "intent": "Tells a plain fact to somebody who would rather not hear it.",
+    "pace": "unhurried",
+    "distance": "close, dry",
+    "avoid": "whispering"
+   },
+   "context_before": "",
+   "context_after": "",
+   "shot": "T1-08",
+   "target_seconds": [
+    2.2,
+    3.4
+   ],
+   "timing_note": "test",
+   "file_name": "T1_N1_NARRATOR_T{nn}.mp3",
+   "takes_planned": 3,
+   "lip_sync": false
+  },
+  {
+   "line_id": "T1-N2",
+   "speaker": "NARRATOR",
+   "text": "Three nights ago two inspectors climbed these stairs while it sat up here and kept still. The lamp never turned because of the wind. It turned because somebody was looking for us.",
+   "spoken_text": "[softly] Three nights ago two inspectors climbed these stairs while it sat up here and kept still. The lamp never turned because of the wind. It turned because somebody was looking for us.",
+   "delivery": {
+    "intent": "Tells a plain fact to somebody who would rather not hear it.",
+    "pace": "unhurried",
+    "distance": "close, dry",
+    "avoid": "whispering"
+   },
+   "context_before": "",
+   "context_after": "",
+   "shot": "after the benchmark cut",
+   "target_seconds": [
+    9.5,
+    14
+   ],
+   "timing_note": "test",
+   "file_name": "T1_N2_NARRATOR_T{nn}.mp3",
+   "takes_planned": 3,
+   "lip_sync": false
+  }
+ ],
+ "characters": 229,
+ "max_takes_total": 6,
+ "how_takes_count": "Up to three imports for each line.",
+ "casting": "",
+ "cost": {
+  "credits_low": 237,
+  "credits_high": 2133,
+  "cash_usd_list": 0.1706,
+  "basis": "test"
+ },
+ "manual_steps": [
+  "Open the website.",
+  "Choose the model and the voice.",
+  "Set the values on this page.",
+  "Paste the spoken text and generate.",
+  "Download and drop the file here."
+ ],
+ "import_checks": [
+  "readable audio"
+ ],
+ "acceptance": [
+  {
+   "id": "WORDS",
+   "text": "Test criterion WORDS.",
+   "mandatory": true,
+   "method": "transcript"
+  },
+  {
+   "id": "CLEAN",
+   "text": "Test criterion CLEAN.",
+   "mandatory": true,
+   "method": "measured"
+  },
+  {
+   "id": "PLAY",
+   "text": "Test criterion PLAY.",
+   "mandatory": true,
+   "method": "human_ear"
+  },
+  {
+   "id": "SAME",
+   "text": "Test criterion SAME.",
+   "mandatory": true,
+   "method": "human_ear"
+  },
+  {
+   "id": "LEVEL",
+   "text": "Test criterion LEVEL.",
+   "mandatory": true,
+   "method": "human_ear"
+  }
+ ],
+ "changed_vs_prior": null
+}

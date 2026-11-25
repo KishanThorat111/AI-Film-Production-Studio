@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Studio</title>
+<link rel="stylesheet" href="/web/css/studio.css">
+<link rel="icon" href="/web/icon.svg">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<div id="shell">
+  <aside id="side" aria-label="Studio">
+    <div id="brand"><span class="mark" aria-hidden="true"></span>Studio</div>
+    <div id="filmbox"></div>
+    <nav id="nav" aria-label="Pages"></nav>
+  </aside>
+  <div id="body">
+    <header id="top"><button id="menu" class="quiet" aria-label="Show pages" aria-expanded="false">☰</button><div id="crumb"></div><div id="activity" role="status" aria-live="polite"></div></header>
+    <div id="banner" role="status"></div>
+    <main id="main" tabindex="-1"></main>
+  </div>
+</div>
+<div id="toasts" role="alert" aria-live="assertive"></div>
+<script type="module" src="/web/js/app.js"></script>
+</body>
+</html>

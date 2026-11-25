@@ -1,0 +1,229 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "$id": "studio/video-package/1",
+ "type": "object",
+ "additionalProperties": false,
+ "required": [
+  "schema_version",
+  "shot",
+  "surface",
+  "attachments",
+  "aspect_ratio",
+  "prompt",
+  "blocks",
+  "duration_s",
+  "audio_instruction",
+  "acceptance",
+  "user_steps",
+  "changed_vs_prior"
+ ],
+ "properties": {
+  "schema_version": {
+   "const": "1"
+  },
+  "shot": {
+   "type": "string"
+  },
+  "surface": {
+   "const": "gemini_app_manual"
+  },
+  "attachments": {
+   "type": "array",
+   "items": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+     "order",
+     "file",
+     "role",
+     "sha256",
+     "width",
+     "height"
+    ],
+    "properties": {
+     "order": {
+      "type": "integer"
+     },
+     "file": {
+      "type": "string",
+      "pattern": "_(1_FIRST|2_LAST|[3-5]_REF)\\.png$"
+     },
+     "role": {
+      "enum": [
+       "first_frame",
+       "last_frame",
+       "identity_reference",
+       "style_reference"
+      ]
+     },
+     "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+     },
+     "width": {
+      "type": "integer"
+     },
+     "height": {
+      "type": "integer"
+     }
+    }
+   },
+   "minItems": 1,
+   "maxItems": 5
+  },
+  "aspect_ratio": {
+   "enum": [
+    "16:9",
+    "9:16"
+   ]
+  },
+  "duration_s": {
+   "type": "object",
+   "additionalProperties": false,
+   "required": [
+    "min",
+    "max"
+   ],
+   "properties": {
+    "min": {
+     "type": "number",
+     "minimum": 3
+    },
+    "max": {
+     "type": "number",
+     "maximum": 10
+    }
+   }
+  },
+  "prompt": {
+   "type": "string",
+   "minLength": 1,
+   "maxLength": 4000
+  },
+  "blocks": {
+   "type": "object",
+   "additionalProperties": false,
+   "required": [
+    "frame_roles",
+    "subject_motion",
+    "camera",
+    "environment_motion",
+    "timing",
+    "physics",
+    "lighting",
+    "must_hold",
+    "must_not",
+    "ending_state"
+   ],
+   "properties": {
+    "frame_roles": {
+     "type": "string"
+    },
+    "subject_motion": {
+     "type": "string"
+    },
+    "camera": {
+     "type": "string"
+    },
+    "environment_motion": {
+     "type": "string"
+    },
+    "timing": {
+     "type": "string"
+    },
+    "physics": {
+     "type": "string"
+    },
+    "lighting": {
+     "type": "string"
+    },
+    "must_hold": {
+     "type": "string"
+    },
+    "must_not": {
+     "type": "string"
+    },
+    "ending_state": {
+     "type": "string"
+    }
+   }
+  },
+  "audio_instruction": {
+   "type": "string"
+  },
+  "feasibility": {
+   "type": "object",
+   "additionalProperties": false,
+   "required": [
+    "moving_entities",
+    "max_travel_frac_per_s",
+    "new_content_frac"
+   ],
+   "properties": {
+    "moving_entities": {
+     "type": "integer"
+    },
+    "max_travel_frac_per_s": {
+     "type": "number"
+    },
+    "new_content_frac": {
+     "type": "number"
+    }
+   }
+  },
+  "acceptance": {
+   "type": "array",
+   "items": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+     "id",
+     "text",
+     "mandatory",
+     "method"
+    ],
+    "properties": {
+     "id": {
+      "type": "string"
+     },
+     "text": {
+      "type": "string"
+     },
+     "mandatory": {
+      "type": "boolean"
+     },
+     "method": {
+      "enum": [
+       "measured",
+       "inspected",
+       "human"
+      ]
+     }
+    }
+   },
+   "minItems": 1
+  },
+  "reject_if": {
+   "type": "array",
+   "items": {
+    "type": "string"
+   }
+  },
+  "likely_failure": {
+   "type": "string"
+  },
+  "user_steps": {
+   "type": "array",
+   "items": {
+    "type": "string"
+   },
+   "minItems": 1
+  },
+  "changed_vs_prior": {
+   "type": [
+    "string",
+    "null"
+   ]
+  }
+ }
+}

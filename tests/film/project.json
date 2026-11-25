@@ -1,0 +1,89 @@
+{
+ "film": {
+  "id": "TESTFILM",
+  "title": "Test film: lamp room",
+  "universe": {
+   "id": "testworld",
+   "title": "Test world"
+  },
+  "is_benchmark": true,
+  "fps": 24,
+  "size": [
+   1920,
+   1080
+  ],
+  "status": "preproduction",
+  "profile": {
+   "blocking": "."
+  }
+ },
+ "script": "script.txt",
+ "plan": "plan.json",
+ "packages": "packages",
+ "cut": "cut.json",
+ "scenes": [
+  {
+   "number": 10,
+   "id": "TF-SC",
+   "slug": "lamp room",
+   "story_time": "evening"
+  }
+ ],
+ "allowances": [
+  {
+   "id": "env_images",
+   "purpose": "test images, all providers together",
+   "limit": 10000000,
+   "max": 350000
+  },
+  {
+   "id": "env_inspect",
+   "purpose": "test Gemini inspection",
+   "limit": 5000000,
+   "max": 450000
+  }
+ ],
+ "decisions": [],
+ "motion": {
+  "T1-07": {
+   "camera": "locked",
+   "zones": [
+    [
+     0.15,
+     0.05,
+     0.75,
+     1.0
+    ]
+   ]
+  },
+  "T1-04": {
+   "camera": "locked",
+   "zones": [
+    [
+     0.25,
+     0,
+     0.75,
+     1.0
+    ]
+   ]
+  },
+  "T1-01": {
+   "camera": "moving",
+   "zones": [
+    [
+     0,
+     0,
+     1,
+     1
+    ]
+   ]
+  }
+ },
+ "sounds": {
+  "CUE-SCRAPE": "panel scrape, placeholder",
+  "CUE-ROOM": "room tone, hallway",
+  "CUE-TICK": "heater coils ticking",
+  "CUE-HUM": "box fan",
+  "CUE-AIR": "attic air"
+ }
+}

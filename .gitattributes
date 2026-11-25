@@ -1,0 +1,6 @@
+* text=auto eol=lf
+*.bat text eol=crlf
+*.png binary
+*.svg text
+# their bytes are part of a fingerprint
+studio/schema/*.sql -text

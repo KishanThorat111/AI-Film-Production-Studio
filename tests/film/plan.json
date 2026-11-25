@@ -1,0 +1,672 @@
+{
+ "title": "Test film",
+ "status": "Only for tests. An invented lighthouse, written for this purpose.",
+ "from": "The door to the stair moves a hand's width and stops.",
+ "to": "Two full seconds of silence.",
+ "left_out": [],
+ "entities": [
+  {
+   "id": "TF-LEAD",
+   "kind": "character",
+   "name": "Lead",
+   "spec": {
+    "stated": {
+     "age": "30"
+    },
+    "must_never_change": [
+     "grey coat",
+     "short hair"
+    ],
+    "may_vary": [
+     "dust"
+    ]
+   }
+  },
+  {
+   "id": "TF-SECOND",
+   "kind": "character",
+   "name": "Second",
+   "spec": {
+    "stated": {
+     "age": "30"
+    },
+    "must_never_change": [
+     "grey coat",
+     "short hair"
+    ],
+    "may_vary": [
+     "dust"
+    ]
+   }
+  },
+  {
+   "id": "TF-PLACE-A",
+   "kind": "environment",
+   "name": "Place-A",
+   "spec": {
+    "size_m": [
+     3,
+     4,
+     2.5
+    ],
+    "layout": "one door, one window"
+   }
+  },
+  {
+   "id": "TF-PLACE-B",
+   "kind": "environment",
+   "name": "Place-B",
+   "spec": {
+    "size_m": [
+     3,
+     4,
+     2.5
+    ],
+    "layout": "one door, one window"
+   }
+  },
+  {
+   "id": "TF-PLACE-C",
+   "kind": "environment",
+   "name": "Place-C",
+   "spec": {
+    "size_m": [
+     3,
+     4,
+     2.5
+    ],
+    "layout": "one door, one window"
+   }
+  },
+  {
+   "id": "TF-NARR",
+   "kind": "voice",
+   "name": "Narr",
+   "spec": {
+    "stated": "the lead, later",
+    "same_person_as": "TF-V-LEAD"
+   }
+  },
+  {
+   "id": "TF-V-LEAD",
+   "kind": "voice",
+   "name": "V-Lead",
+   "spec": {
+    "age": "30",
+    "quality": "plain",
+    "never": "whispering"
+   }
+  },
+  {
+   "id": "TF-V-SECOND",
+   "kind": "voice",
+   "name": "V-Second",
+   "spec": {
+    "age": "30",
+    "quality": "plain",
+    "never": "whispering"
+   }
+  }
+ ],
+ "shots": [
+  {
+   "code": "T1-01",
+   "tier": "A",
+   "frames": 120,
+   "quotes": [
+    "The door to the stair moves a hand's width and stops."
+   ],
+   "purpose": "Purpose of shot T1-01 in the test film.",
+   "camera": {
+    "mode": "cinematic",
+    "size": "medium",
+    "lens_mm": 35,
+    "height_m": 1.5,
+    "move": "slow tilt"
+   },
+   "light": "one lamp",
+   "withheld": "nothing",
+   "technique": "generated",
+   "motion_requirement": "Test reason for T1-01.",
+   "technique_reason": "Test reason for T1-01.",
+   "why_not_richer": "Test reason for T1-01.",
+   "fallback": {
+    "technique": "still_move",
+    "note": "test"
+   }
+  },
+  {
+   "code": "T1-02",
+   "tier": "B",
+   "frames": 84,
+   "quotes": [
+    "A ring of clean floor where the stove used to stand.",
+    "You told me it was empty."
+   ],
+   "purpose": "Purpose of shot T1-02 in the test film.",
+   "camera": {
+    "mode": "cinematic",
+    "size": "insert",
+    "lens_mm": 35,
+    "height_m": 1.5,
+    "move": "locked"
+   },
+   "light": "one lamp",
+   "withheld": "nothing",
+   "technique": "layered_2p5d",
+   "motion_requirement": "Test reason for T1-02.",
+   "fallback": {
+    "technique": "still_move",
+    "note": "test"
+   }
+  },
+  {
+   "code": "T1-03",
+   "tier": "A",
+   "frames": 114,
+   "quotes": [
+    "Lead listens to the wall and stops explaining.",
+    "I said nobody answered.",
+    "Move back."
+   ],
+   "purpose": "Purpose of shot T1-03 in the test film.",
+   "camera": {
+    "mode": "cinematic",
+    "size": "close-up",
+    "lens_mm": 35,
+    "height_m": 1.5,
+    "move": "locked"
+   },
+   "light": "one lamp",
+   "withheld": "nothing",
+   "technique": "still_move",
+   "motion_requirement": "Test reason for T1-03.",
+   "fallback": {
+    "technique": "still_move",
+    "note": "test"
+   }
+  },
+  {
+   "code": "T1-04",
+   "tier": "A",
+   "frames": 180,
+   "quotes": [
+    "Second climbs until only the boots show, then stands still.",
+    "Stay on the stairs until I call, and if I don't, go home."
+   ],
+   "purpose": "Purpose of shot T1-04 in the test film.",
+   "camera": {
+    "mode": "cinematic",
+    "size": "medium wide",
+    "lens_mm": 35,
+    "height_m": 1.5,
+    "move": "locked"
+   },
+   "light": "one lamp",
+   "withheld": "nothing",
+   "technique": "generated",
+   "motion_requirement": "Test reason for T1-04.",
+   "technique_reason": "Test reason for T1-04.",
+   "why_not_richer": "Test reason for T1-04.",
+   "fallback": {
+    "technique": "still_move",
+    "note": "test"
+   }
+  },
+  {
+   "code": "T1-05",
+   "tier": "A",
+   "frames": 168,
+   "quotes": [
+    "The view rises into the lamp room."
+   ],
+   "purpose": "Purpose of shot T1-05 in the test film.",
+   "camera": {
+    "mode": "cinematic",
+    "size": "point of view",
+    "lens_mm": 35,
+    "height_m": 1.5,
+    "move": "slow tilt"
+   },
+   "light": "one lamp",
+   "withheld": "nothing",
+   "technique": "render_3d",
+   "motion_requirement": "Test reason for T1-05.",
+   "technique_reason": "Test reason for T1-05.",
+   "fallback": {
+    "technique": "still_move",
+    "note": "test"
+   }
+  },
+  {
+   "code": "T1-06",
+   "tier": "B",
+   "frames": 156,
+   "quotes": [
+    "A warm cup. A folded blanket. A row of matches."
+   ],
+   "purpose": "Purpose of shot T1-06 in the test film.",
+   "camera": {
+    "mode": "cinematic",
+    "size": "inserts",
+    "lens_mm": 35,
+    "height_m": 1.5,
+    "move": "locked"
+   },
+   "light": "one lamp",
+   "withheld": "nothing",
+   "technique": "layered_2p5d",
+   "motion_requirement": "Test reason for T1-06.",
+   "fallback": {
+    "technique": "still_move",
+    "note": "test"
+   }
+  },
+  {
+   "code": "T1-07",
+   "tier": "A",
+   "frames": 120,
+   "quotes": [
+    "Lead leans over the rail and looks straight down."
+   ],
+   "purpose": "Purpose of shot T1-07 in the test film.",
+   "camera": {
+    "mode": "cinematic",
+    "size": "medium close",
+    "lens_mm": 35,
+    "height_m": 1.5,
+    "move": "locked"
+   },
+   "light": "one lamp",
+   "withheld": "nothing",
+   "technique": "generated",
+   "motion_requirement": "Test reason for T1-07.",
+   "technique_reason": "Test reason for T1-07.",
+   "why_not_richer": "Test reason for T1-07.",
+   "fallback": {
+    "technique": "still_move",
+    "note": "test"
+   }
+  },
+  {
+   "code": "T1-08",
+   "tier": "A",
+   "frames": 192,
+   "quotes": [
+    "Straight down the stairwell, a made bed at the bottom.",
+    "From the gallery you could see every bed."
+   ],
+   "purpose": "Purpose of shot T1-08 in the test film.",
+   "camera": {
+    "mode": "cinematic",
+    "size": "overhead",
+    "lens_mm": 35,
+    "height_m": 1.5,
+    "move": "locked"
+   },
+   "light": "one lamp",
+   "withheld": "nothing",
+   "technique": "render_3d",
+   "motion_requirement": "Test reason for T1-08.",
+   "technique_reason": "Test reason for T1-08.",
+   "fallback": {
+    "technique": "still_move",
+    "note": "test"
+   }
+  }
+ ],
+ "lines": [
+  {
+   "id": "T1-L1",
+   "speaker_id": "TF-V-SECOND",
+   "quote": "You told me it was empty.",
+   "text": "You told me it was empty."
+  },
+  {
+   "id": "T1-L2",
+   "speaker_id": "TF-V-LEAD",
+   "quote": "I said nobody answered.",
+   "text": "I said nobody answered."
+  },
+  {
+   "id": "T1-L3",
+   "speaker_id": "TF-V-SECOND",
+   "quote": "Move back.",
+   "text": "Move back."
+  },
+  {
+   "id": "T1-L4",
+   "speaker_id": "TF-V-SECOND",
+   "quote": "Stay on the stairs until I call, and if I don't, go home.",
+   "text": "Stay on the stairs until I call, and if I don't, go home."
+  },
+  {
+   "id": "T1-N1",
+   "speaker_id": "TF-NARR",
+   "quote": "From the gallery you could see every bed.",
+   "text": "From the gallery you could see every bed."
+  },
+  {
+   "id": "T1-N2",
+   "speaker_id": "TF-NARR",
+   "quote": "Three nights ago two inspectors climbed these stairs while it sat up here and kept still. The lamp never turned because of the wind. It turned because somebody was looking for us.",
+   "text": "Three nights ago two inspectors climbed these stairs while it sat up here and kept still. The lamp never turned because of the wind. It turned because somebody was looking for us."
+  },
+  {
+   "id": "CAST-SECOND-A",
+   "speaker_id": "TF-V-SECOND",
+   "quote": "Stay on the stairs until I call, and if I don't, go home.",
+   "text": "Stay on the stairs until I call, and if I don't, go home."
+  },
+  {
+   "id": "CAST-SECOND-B",
+   "speaker_id": "TF-V-SECOND",
+   "quote": "Stay on the stairs until I call, and if I don't, go home.",
+   "text": "Stay on the stairs until I call, and if I don't, go home."
+  },
+  {
+   "id": "CAST-LEAD-A",
+   "speaker_id": "TF-V-LEAD",
+   "quote": "Three nights ago two inspectors climbed these stairs while it sat up here and kept still. The lamp never turned because of the wind. It turned because somebody was looking for us.",
+   "text": "Three nights ago two inspectors climbed these stairs while it sat up here and kept still. The lamp never turned because of the wind. It turned because somebody was looking for us."
+  },
+  {
+   "id": "CAST-LEAD-B",
+   "speaker_id": "TF-V-LEAD",
+   "quote": "Three nights ago two inspectors climbed these stairs while it sat up here and kept still. The lamp never turned because of the wind. It turned because somebody was looking for us.",
+   "text": "Three nights ago two inspectors climbed these stairs while it sat up here and kept still. The lamp never turned because of the wind. It turned because somebody was looking for us."
+  },
+  {
+   "id": "CAST-SECOND-A2",
+   "speaker_id": "TF-V-SECOND",
+   "quote": "We check the store, we check the gallery, and then we sign the book and take the early boat.",
+   "text": "We check the store, we check the gallery, and then we sign the book and take the early boat."
+  },
+  {
+   "id": "CAST-SECOND-B2",
+   "speaker_id": "TF-V-SECOND",
+   "quote": "We check the store, we check the gallery, and then we sign the book and take the early boat.",
+   "text": "We check the store, we check the gallery, and then we sign the book and take the early boat."
+  },
+  {
+   "id": "CAST-LEAD-A2",
+   "speaker_id": "TF-V-LEAD",
+   "quote": "I counted the steps every evening, and there were always the same number until the week it rained.",
+   "text": "I counted the steps every evening, and there were always the same number until the week it rained."
+  },
+  {
+   "id": "CAST-LEAD-B2",
+   "speaker_id": "TF-V-LEAD",
+   "quote": "I counted the steps every evening, and there were always the same number until the week it rained.",
+   "text": "I counted the steps every evening, and there were always the same number until the week it rained."
+  }
+ ],
+ "cues": [
+  {
+   "id": "CUE-CLOTH",
+   "kind": "foley",
+   "purpose": "Purpose of CUE-CLOTH in the test film.",
+   "spec": {
+    "shot": "T1-01",
+    "at_frame": 14
+   },
+   "sourcing": "generate",
+   "search": {
+    "terms": [
+     "cloth",
+     "wood"
+    ],
+    "hits": 0,
+    "why_not": "the test library holds none"
+   }
+  },
+  {
+   "id": "CUE-SCRAPE",
+   "kind": "hard_fx",
+   "purpose": "Purpose of CUE-SCRAPE in the test film.",
+   "spec": {
+    "shot": "T1-03",
+    "at_frame": 60
+   },
+   "sourcing": "generate",
+   "search": {
+    "terms": [
+     "cloth",
+     "wood"
+    ],
+    "hits": 0,
+    "why_not": "the test library holds none"
+   }
+  },
+  {
+   "id": "CUE-TICK",
+   "kind": "motif",
+   "purpose": "Purpose of CUE-TICK in the test film.",
+   "spec": {
+    "shot": "T1-05",
+    "at_frame": 60
+   },
+   "sourcing": "record",
+   "search": {
+    "terms": [
+     "cloth",
+     "wood"
+    ],
+    "hits": 0,
+    "why_not": "the test library holds none"
+   }
+  },
+  {
+   "id": "CUE-HUM",
+   "kind": "ambience",
+   "purpose": "Purpose of CUE-HUM in the test film.",
+   "spec": {
+    "shot": "T1-08",
+    "at_frame": 0
+   },
+   "sourcing": "record",
+   "search": {
+    "terms": [
+     "cloth",
+     "wood"
+    ],
+    "hits": 0,
+    "why_not": "the test library holds none"
+   }
+  },
+  {
+   "id": "CUE-ROOM",
+   "kind": "room_tone",
+   "purpose": "Purpose of CUE-ROOM in the test film.",
+   "spec": {
+    "shot": "T1-01",
+    "at_frame": 0
+   },
+   "sourcing": "record",
+   "search": {
+    "terms": [
+     "cloth",
+     "wood"
+    ],
+    "hits": 0,
+    "why_not": "the test library holds none"
+   }
+  },
+  {
+   "id": "CUE-STEPS",
+   "kind": "foley",
+   "purpose": "Purpose of CUE-STEPS in the test film.",
+   "spec": {
+    "shot": "T1-04",
+    "at_frame": 14
+   },
+   "sourcing": "generate",
+   "search": {
+    "terms": [
+     "cloth",
+     "wood"
+    ],
+    "hits": 0,
+    "why_not": "the test library holds none"
+   }
+  },
+  {
+   "id": "CUE-SILENCE",
+   "kind": "designed_silence",
+   "purpose": "Purpose of CUE-SILENCE in the test film.",
+   "spec": {
+    "shot": "T1-08",
+    "at_frame": 132,
+    "frames": 48,
+    "max_dbfs": -55
+   },
+   "sourcing": "none"
+  }
+ ],
+ "images": [
+  {
+   "id": "IMG-LEAD-ANCHOR",
+   "for": "TF-LEAD",
+   "kind": "anchor",
+   "aspect": "3:4",
+   "refs": [],
+   "prompt": "Test photograph IMG-LEAD-ANCHOR: an invented adult in a lamp room who does not resemble any real person, one lamp from the left, plain wall, realistic photograph, no text."
+  },
+  {
+   "id": "IMG-LEAD-34L",
+   "for": "TF-LEAD",
+   "kind": "identity",
+   "aspect": "3:4",
+   "refs": [
+    "IMG-LEAD-ANCHOR"
+   ],
+   "prompt": "Test photograph IMG-LEAD-34L: an invented adult in a lamp room who does not resemble any real person, one lamp from the left, plain wall, realistic photograph, no text."
+  },
+  {
+   "id": "IMG-LEAD-PROFR",
+   "for": "TF-LEAD",
+   "kind": "identity",
+   "aspect": "3:4",
+   "refs": [
+    "IMG-LEAD-ANCHOR"
+   ],
+   "prompt": "Test photograph IMG-LEAD-PROFR: an invented adult in a lamp room who does not resemble any real person, one lamp from the left, plain wall, realistic photograph, no text."
+  },
+  {
+   "id": "IMG-LEAD-DOWN",
+   "for": "TF-LEAD",
+   "kind": "identity",
+   "aspect": "3:4",
+   "refs": [
+    "IMG-LEAD-ANCHOR"
+   ],
+   "prompt": "Test photograph IMG-LEAD-DOWN: an invented adult in a lamp room who does not resemble any real person, one lamp from the left, plain wall, realistic photograph, no text."
+  },
+  {
+   "id": "IMG-LEAD-FEAR",
+   "for": "TF-LEAD",
+   "kind": "identity",
+   "aspect": "3:4",
+   "refs": [
+    "IMG-LEAD-ANCHOR"
+   ],
+   "prompt": "Test photograph IMG-LEAD-FEAR: an invented adult in a lamp room who does not resemble any real person, one lamp from the left, plain wall, realistic photograph, no text."
+  },
+  {
+   "id": "IMG-T1-02",
+   "for": "T1-02",
+   "kind": "keyframe",
+   "aspect": "16:9",
+   "refs": [
+    "BLOCK:T1-02"
+   ],
+   "prompt": "Test photograph IMG-T1-02: an invented adult in a lamp room who does not resemble any real person, one lamp from the left, plain wall, realistic photograph, no text."
+  },
+  {
+   "id": "IMG-T1-07-FIRST",
+   "for": "T1-07",
+   "kind": "first_frame",
+   "aspect": "16:9",
+   "refs": [
+    "IMG-LEAD-ANCHOR",
+    "IMG-LEAD-34L",
+    "BLOCK:T1-07:0000"
+   ],
+   "prompt": "Test photograph IMG-T1-07-FIRST: an invented adult in a lamp room who does not resemble any real person, one lamp from the left, plain wall, realistic photograph, no text."
+  },
+  {
+   "id": "IMG-T1-07-LAST",
+   "for": "T1-07",
+   "kind": "last_frame",
+   "aspect": "16:9",
+   "refs": [
+    "IMG-T1-07-FIRST",
+    "IMG-LEAD-DOWN"
+   ],
+   "prompt": "Test photograph IMG-T1-07-LAST: an invented adult in a lamp room who does not resemble any real person, one lamp from the left, plain wall, realistic photograph, no text."
+  },
+  {
+   "id": "IMG-T1-04-FIRST",
+   "for": "T1-04",
+   "kind": "first_frame",
+   "aspect": "16:9",
+   "refs": [
+    "BLOCK:T1-04:0000"
+   ],
+   "prompt": "Test photograph IMG-T1-04-FIRST: an invented adult in a lamp room who does not resemble any real person, one lamp from the left, plain wall, realistic photograph, no text."
+  },
+  {
+   "id": "IMG-T1-04-LAST",
+   "for": "T1-04",
+   "kind": "last_frame",
+   "aspect": "16:9",
+   "refs": [
+    "IMG-T1-04-FIRST"
+   ],
+   "prompt": "Test photograph IMG-T1-04-LAST: an invented adult in a lamp room who does not resemble any real person, one lamp from the left, plain wall, realistic photograph, no text."
+  },
+  {
+   "id": "IMG-T1-01-FIRST",
+   "for": "T1-01",
+   "kind": "first_frame",
+   "aspect": "16:9",
+   "refs": [
+    "BLOCK:T1-01:0000"
+   ],
+   "prompt": "Test photograph IMG-T1-01-FIRST: an invented adult in a lamp room who does not resemble any real person, one lamp from the left, plain wall, realistic photograph, no text."
+  },
+  {
+   "id": "IMG-T1-01-LAST",
+   "for": "T1-01",
+   "kind": "last_frame",
+   "aspect": "16:9",
+   "refs": [
+    "IMG-T1-01-FIRST",
+    "BLOCK:T1-01:0119"
+   ],
+   "prompt": "Test photograph IMG-T1-01-LAST: an invented adult in a lamp room who does not resemble any real person, one lamp from the left, plain wall, realistic photograph, no text."
+  }
+ ],
+ "image_plan": {
+  "order": [
+   "IMG-LEAD-ANCHOR",
+   "IMG-LEAD-34L",
+   "IMG-LEAD-PROFR",
+   "IMG-LEAD-DOWN",
+   "IMG-LEAD-FEAR",
+   "IMG-T1-02",
+   "IMG-T1-07-FIRST",
+   "IMG-T1-07-LAST",
+   "IMG-T1-04-FIRST",
+   "IMG-T1-04-LAST",
+   "IMG-T1-01-FIRST",
+   "IMG-T1-01-LAST"
+  ],
+  "comparison": [
+   "IMG-LEAD-PROFR",
+   "IMG-LEAD-DOWN",
+   "IMG-LEAD-FEAR"
+  ],
+  "note": "test"
+ }
+}

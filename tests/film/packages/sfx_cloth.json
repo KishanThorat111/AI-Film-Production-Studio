@@ -1,0 +1,36 @@
+{
+ "schema_version": "1",
+ "package": "TF-XP-CLOTH",
+ "cue": "CUE-CLOTH",
+ "purpose": "Purpose of CUE-CLOTH in the test film.",
+ "sound": "A heavy curtain pushed along an iron rail",
+ "prompt": "Close, dry recording: one slow push of a heavy wool curtain along an iron rail, ending in one dull knock of wood. Small room, no echo, no voices, no breathing, no music.",
+ "duration_seconds": 2.4,
+ "prompt_influence": 0.45,
+ "loop": false,
+ "model_id": "eleven_text_to_sound_v3",
+ "output_format": "mp3_44100_128",
+ "perspective": "centred, close",
+ "acceptance": [
+  "one sound",
+  "no echo"
+ ],
+ "avoid": "voices, music",
+ "library_search": {
+  "terms": [
+   "cloth",
+   "wood"
+  ],
+  "hits": 0,
+  "why_not": "the test library holds none"
+ },
+ "manual_steps": [
+  "Open Sound Effects.",
+  "Paste the prompt and the duration.",
+  "Generate once and drop the file here."
+ ],
+ "placement": "test",
+ "how_takes_count": "Up to three imports.",
+ "file_name": "CUE_CLOTH_T{nn}.mp3",
+ "changed_vs_prior": null
+}

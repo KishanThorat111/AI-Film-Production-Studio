@@ -1,0 +1,642 @@
+{
+ "plan": {
+  "sequences": [
+   "H1",
+   "H2",
+   "H3",
+   "H4"
+  ],
+  "defects": [
+   "object vanishes",
+   "object appears",
+   "shape melts and returns",
+   "brightness pumps",
+   "picture freezes",
+   "hidden cut",
+   "camera jerk",
+   "colour shifts",
+   "goes soft"
+  ],
+  "frames": 72,
+  "size": [
+   960,
+   540
+  ],
+  "rule": "found = a critical or major flag that touches the planted frames (4 frames tolerance); false alarm = a critical or major flag on a clean clip",
+  "seed": 7
+ },
+ "plan_hash": "af18ebbca462480ac738399d9cc1fc7a42ae26f390936c9bba85396d6f27d09f",
+ "made": "2026-11-25 18:27",
+ "seconds": 101,
+ "recall": {
+  "object vanishes": "4/4",
+  "object appears": "4/4",
+  "shape melts and returns": "2/4",
+  "brightness pumps": "4/4",
+  "picture freezes": "4/4",
+  "hidden cut": "4/4",
+  "camera jerk": "4/4",
+  "colour shifts": "4/4",
+  "goes soft": "4/4"
+ },
+ "recall_total": "34/36",
+ "false_alarms": "1/4",
+ "rows": [
+  {
+   "sequence": "H1",
+   "camera": "moving",
+   "planted": "clean",
+   "at": null,
+   "found": null,
+   "classes": [],
+   "flags_elsewhere": 0,
+   "false_alarm": false
+  },
+  {
+   "sequence": "H1",
+   "camera": "moving",
+   "planted": "object vanishes",
+   "at": [
+    34,
+    40
+   ],
+   "found": true,
+   "classes": [
+    "sudden local change"
+   ],
+   "flags_elsewhere": 0,
+   "false_alarm": null
+  },
+  {
+   "sequence": "H1",
+   "camera": "moving",
+   "planted": "object appears",
+   "at": [
+    34,
+    40
+   ],
+   "found": true,
+   "classes": [
+    "sudden local change"
+   ],
+   "flags_elsewhere": 0,
+   "false_alarm": null
+  },
+  {
+   "sequence": "H1",
+   "camera": "moving",
+   "planted": "shape melts and returns",
+   "at": [
+    24,
+    48
+   ],
+   "found": false,
+   "classes": [],
+   "flags_elsewhere": 0,
+   "false_alarm": null
+  },
+  {
+   "sequence": "H1",
+   "camera": "moving",
+   "planted": "brightness pumps",
+   "at": [
+    24,
+    48
+   ],
+   "found": true,
+   "classes": [
+    "luma flicker",
+    "shape unstable",
+    "short glitch"
+   ],
+   "flags_elsewhere": 0,
+   "false_alarm": null
+  },
+  {
+   "sequence": "H1",
+   "camera": "moving",
+   "planted": "picture freezes",
+   "at": [
+    36,
+    48
+   ],
+   "found": true,
+   "classes": [
+    "frozen",
+    "sudden local change"
+   ],
+   "flags_elsewhere": 0,
+   "false_alarm": null
+  },
+  {
+   "sequence": "H1",
+   "camera": "moving",
+   "planted": "hidden cut",
+   "at": [
+    35,
+    37
+   ],
+   "found": true,
+   "classes": [
+    "unplanned cut"
+   ],
+   "flags_elsewhere": 0,
+   "false_alarm": null
+  },
+  {
+   "sequence": "H1",
+   "camera": "moving",
+   "planted": "camera jerk",
+   "at": [
+    36,
+    40
+   ],
+   "found": true,
+   "classes": [
+    "short glitch"
+   ],
+   "flags_elsewhere": 0,
+   "false_alarm": null
+  },
+  {
+   "sequence": "H1",
+   "camera": "moving",
+   "planted": "colour shifts",
+   "at": [
+    35,
+    38
+   ],
+   "found": true,
+   "classes": [
+    "colour jump",
+    "sudden local change"
+   ],
+   "flags_elsewhere": 0,
+   "false_alarm": null
+  },
+  {
+   "sequence": "H1",
+   "camera": "moving",
+   "planted": "goes soft",
+   "at": [
+    36,
+    52
+   ],
+   "found": true,
+   "classes": [
+    "goes soft",
+    "sudden local change"
+   ],
+   "flags_elsewhere": 0,
+   "false_alarm": null
+  },
+  {
+   "sequence": "H2",
+   "camera": "moving",
+   "planted": "clean",
+   "at": null,
+   "found": null,
+   "classes": [],
+   "flags_elsewhere": 0,
+   "false_alarm": false
+  },
+  {
+   "sequence": "H2",
+   "camera": "moving",
+   "planted": "object vanishes",
+   "at": [
+    34,
+    40
+   ],
+   "found": true,
+   "classes": [
+    "sudden local change"
+   ],
+   "flags_elsewhere": 0,
+   "false_alarm": null
+  },
+  {
+   "sequence": "H2",
+   "camera": "moving",
+   "planted": "object appears",
+   "at": [
+    34,
+    40
+   ],
+   "found": true,
+   "classes": [
+    "sudden local change"
+   ],
+   "flags_elsewhere": 0,
+   "false_alarm": null
+  },
+  {
+   "sequence": "H2",
+   "camera": "moving",
+   "planted": "shape melts and returns",
+   "at": [
+    24,
+    48
+   ],
+   "found": false,
+   "classes": [],
+   "flags_elsewhere": 0,
+   "false_alarm": null
+  },
+  {
+   "sequence": "H2",
+   "camera": "moving",
+   "planted": "brightness pumps",
+   "at": [
+    24,
+    48
+   ],
+   "found": true,
+   "classes": [
+    "luma flicker",
+    "shape unstable",
+    "short glitch",
+    "unplanned cut"
+   ],
+   "flags_elsewhere": 0,
+   "false_alarm": null
+  },
+  {
+   "sequence": "H2",
+   "camera": "moving",
+   "planted": "picture freezes",
+   "at": [
+    36,
+    48
+   ],
+   "found": true,
+   "classes": [
+    "frozen"
+   ],
+   "flags_elsewhere": 0,
+   "false_alarm": null
+  },
+  {
+   "sequence": "H2",
+   "camera": "moving",
+   "planted": "hidden cut",
+   "at": [
+    35,
+    37
+   ],
+   "found": true,
+   "classes": [
+    "unplanned cut"
+   ],
+   "flags_elsewhere": 0,
+   "false_alarm": null
+  },
+  {
+   "sequence": "H2",
+   "camera": "moving",
+   "planted": "camera jerk",
+   "at": [
+    36,
+    40
+   ],
+   "found": true,
+   "classes": [
+    "short glitch"
+   ],
+   "flags_elsewhere": 0,
+   "false_alarm": null
+  },
+  {
+   "sequence": "H2",
+   "camera": "moving",
+   "planted": "colour shifts",
+   "at": [
+    35,
+    38
+   ],
+   "found": true,
+   "classes": [
+    "colour jump"
+   ],
+   "flags_elsewhere": 0,
+   "false_alarm": null
+  },
+  {
+   "sequence": "H2",
+   "camera": "moving",
+   "planted": "goes soft",
+   "at": [
+    36,
+    52
+   ],
+   "found": true,
+   "classes": [
+    "goes soft",
+    "sudden local change"
+   ],
+   "flags_elsewhere": 0,
+   "false_alarm": null
+  },
+  {
+   "sequence": "H3",
+   "camera": "moving",
+   "planted": "clean",
+   "at": null,
+   "found": null,
+   "classes": [],
+   "flags_elsewhere": 1,
+   "false_alarm": true
+  },
+  {
+   "sequence": "H3",
+   "camera": "moving",
+   "planted": "object vanishes",
+   "at": [
+    34,
+    40
+   ],
+   "found": true,
+   "classes": [
+    "sudden local change"
+   ],
+   "flags_elsewhere": 0,
+   "false_alarm": null
+  },
+  {
+   "sequence": "H3",
+   "camera": "moving",
+   "planted": "object appears",
+   "at": [
+    34,
+    40
+   ],
+   "found": true,
+   "classes": [
+    "sudden local change"
+   ],
+   "flags_elsewhere": 0,
+   "false_alarm": null
+  },
+  {
+   "sequence": "H3",
+   "camera": "moving",
+   "planted": "shape melts and returns",
+   "at": [
+    24,
+    48
+   ],
+   "found": true,
+   "classes": [
+    "sudden local change"
+   ],
+   "flags_elsewhere": 0,
+   "false_alarm": null
+  },
+  {
+   "sequence": "H3",
+   "camera": "moving",
+   "planted": "brightness pumps",
+   "at": [
+    24,
+    48
+   ],
+   "found": true,
+   "classes": [
+    "luma flicker",
+    "shape unstable",
+    "short glitch",
+    "unplanned cut"
+   ],
+   "flags_elsewhere": 0,
+   "false_alarm": null
+  },
+  {
+   "sequence": "H3",
+   "camera": "moving",
+   "planted": "picture freezes",
+   "at": [
+    36,
+    48
+   ],
+   "found": true,
+   "classes": [
+    "frozen",
+    "sudden local change"
+   ],
+   "flags_elsewhere": 0,
+   "false_alarm": null
+  },
+  {
+   "sequence": "H3",
+   "camera": "moving",
+   "planted": "hidden cut",
+   "at": [
+    35,
+    37
+   ],
+   "found": true,
+   "classes": [
+    "unplanned cut"
+   ],
+   "flags_elsewhere": 0,
+   "false_alarm": null
+  },
+  {
+   "sequence": "H3",
+   "camera": "moving",
+   "planted": "camera jerk",
+   "at": [
+    36,
+    40
+   ],
+   "found": true,
+   "classes": [
+    "sudden local change"
+   ],
+   "flags_elsewhere": 0,
+   "false_alarm": null
+  },
+  {
+   "sequence": "H3",
+   "camera": "moving",
+   "planted": "colour shifts",
+   "at": [
+    35,
+    38
+   ],
+   "found": true,
+   "classes": [
+    "colour jump",
+    "sudden local change"
+   ],
+   "flags_elsewhere": 1,
+   "false_alarm": null
+  },
+  {
+   "sequence": "H3",
+   "camera": "moving",
+   "planted": "goes soft",
+   "at": [
+    36,
+    52
+   ],
+   "found": true,
+   "classes": [
+    "goes soft",
+    "sudden local change"
+   ],
+   "flags_elsewhere": 0,
+   "false_alarm": null
+  },
+  {
+   "sequence": "H4",
+   "camera": "moving",
+   "planted": "clean",
+   "at": null,
+   "found": null,
+   "classes": [],
+   "flags_elsewhere": 0,
+   "false_alarm": false
+  },
+  {
+   "sequence": "H4",
+   "camera": "moving",
+   "planted": "object vanishes",
+   "at": [
+    34,
+    40
+   ],
+   "found": true,
+   "classes": [
+    "sudden local change"
+   ],
+   "flags_elsewhere": 0,
+   "false_alarm": null
+  },
+  {
+   "sequence": "H4",
+   "camera": "moving",
+   "planted": "object appears",
+   "at": [
+    34,
+    40
+   ],
+   "found": true,
+   "classes": [
+    "sudden local change"
+   ],
+   "flags_elsewhere": 0,
+   "false_alarm": null
+  },
+  {
+   "sequence": "H4",
+   "camera": "moving",
+   "planted": "shape melts and returns",
+   "at": [
+    24,
+    48
+   ],
+   "found": true,
+   "classes": [
+    "sudden local change"
+   ],
+   "flags_elsewhere": 0,
+   "false_alarm": null
+  },
+  {
+   "sequence": "H4",
+   "camera": "moving",
+   "planted": "brightness pumps",
+   "at": [
+    24,
+    48
+   ],
+   "found": true,
+   "classes": [
+    "luma flicker",
+    "shape unstable",
+    "short glitch",
+    "unplanned cut"
+   ],
+   "flags_elsewhere": 0,
+   "false_alarm": null
+  },
+  {
+   "sequence": "H4",
+   "camera": "moving",
+   "planted": "picture freezes",
+   "at": [
+    36,
+    48
+   ],
+   "found": true,
+   "classes": [
+    "frozen"
+   ],
+   "flags_elsewhere": 0,
+   "false_alarm": null
+  },
+  {
+   "sequence": "H4",
+   "camera": "moving",
+   "planted": "hidden cut",
+   "at": [
+    35,
+    37
+   ],
+   "found": true,
+   "classes": [
+    "unplanned cut"
+   ],
+   "flags_elsewhere": 0,
+   "false_alarm": null
+  },
+  {
+   "sequence": "H4",
+   "camera": "moving",
+   "planted": "camera jerk",
+   "at": [
+    36,
+    40
+   ],
+   "found": true,
+   "classes": [
+    "short glitch"
+   ],
+   "flags_elsewhere": 0,
+   "false_alarm": null
+  },
+  {
+   "sequence": "H4",
+   "camera": "moving",
+   "planted": "colour shifts",
+   "at": [
+    35,
+    38
+   ],
+   "found": true,
+   "classes": [
+    "colour jump"
+   ],
+   "flags_elsewhere": 0,
+   "false_alarm": null
+  },
+  {
+   "sequence": "H4",
+   "camera": "moving",
+   "planted": "goes soft",
+   "at": [
+    36,
+    52
+   ],
+   "found": true,
+   "classes": [
+    "goes soft",
+    "sudden local change"
+   ],
+   "flags_elsewhere": 0,
+   "false_alarm": null
+  }
+ ],
+ "limits": "rendered footage, planted defects; not generated footage"
+}

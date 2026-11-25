@@ -1,0 +1,144 @@
+{
+ "schema_version": "1",
+ "package": "TF-VP-SECOND",
+ "section": "Test package TF-VP-SECOND",
+ "method": "per_line_tts",
+ "voice_bindings": [
+  {
+   "speaker": "SECOND",
+   "binding_id": "vb_second",
+   "voice_name": "test voice",
+   "provider_voice_id": "recorded from your casting choice"
+  }
+ ],
+ "model": "eleven_v4",
+ "settings": {
+  "stability": 0.5,
+  "similarity_boost": 0.8,
+  "style": 0,
+  "speed": 0.95
+ },
+ "output_format": {
+  "requested": "mp3_44100_128",
+  "minimum": "mp3_44100_128"
+ },
+ "seed": null,
+ "lines": [
+  {
+   "line_id": "T1-L1",
+   "speaker": "SECOND",
+   "text": "You told me it was empty.",
+   "spoken_text": "You told me it was empty.",
+   "delivery": {
+    "intent": "Tells a plain fact to somebody who would rather not hear it.",
+    "pace": "unhurried",
+    "distance": "close, dry",
+    "avoid": "whispering"
+   },
+   "context_before": "",
+   "context_after": "",
+   "shot": "T1-02",
+   "target_seconds": [
+    1.1,
+    2.0
+   ],
+   "timing_note": "test",
+   "file_name": "T1_L1_SECOND_T{nn}.mp3",
+   "takes_planned": 3,
+   "lip_sync": false
+  },
+  {
+   "line_id": "T1-L3",
+   "speaker": "SECOND",
+   "text": "Move back.",
+   "spoken_text": "[strained] Move back.",
+   "delivery": {
+    "intent": "Tells a plain fact to somebody who would rather not hear it.",
+    "pace": "unhurried",
+    "distance": "close, dry",
+    "avoid": "whispering"
+   },
+   "context_before": "",
+   "context_after": "",
+   "shot": "T1-03",
+   "target_seconds": [
+    0.7,
+    1.3
+   ],
+   "timing_note": "test",
+   "file_name": "T1_L3_SECOND_T{nn}.mp3",
+   "takes_planned": 3,
+   "lip_sync": false
+  },
+  {
+   "line_id": "T1-L4",
+   "speaker": "SECOND",
+   "text": "Stay on the stairs until I call, and if I don't, go home.",
+   "spoken_text": "[quietly] Stay on the stairs until I call, and if I don't, go home.",
+   "delivery": {
+    "intent": "Tells a plain fact to somebody who would rather not hear it.",
+    "pace": "unhurried",
+    "distance": "close, dry",
+    "avoid": "whispering"
+   },
+   "context_before": "",
+   "context_after": "",
+   "shot": "T1-04 into T1-05",
+   "target_seconds": [
+    3.6,
+    4.6
+   ],
+   "timing_note": "test",
+   "file_name": "T1_L4_SECOND_T{nn}.mp3",
+   "takes_planned": 3,
+   "lip_sync": false
+  }
+ ],
+ "characters": 113,
+ "max_takes_total": 9,
+ "how_takes_count": "Up to three imports for each line.",
+ "casting": "",
+ "cost": {
+  "credits_low": 142,
+  "credits_high": 1278,
+  "cash_usd_list": 0.1022,
+  "basis": "test"
+ },
+ "manual_steps": [
+  "Open the website.",
+  "Choose the model and the voice.",
+  "Set the values on this page.",
+  "Paste the spoken text and generate.",
+  "Download and drop the file here."
+ ],
+ "import_checks": [
+  "readable audio"
+ ],
+ "acceptance": [
+  {
+   "id": "WORDS",
+   "text": "Test criterion WORDS.",
+   "mandatory": true,
+   "method": "transcript"
+  },
+  {
+   "id": "CLEAN",
+   "text": "Test criterion CLEAN.",
+   "mandatory": true,
+   "method": "measured"
+  },
+  {
+   "id": "PLAY",
+   "text": "Test criterion PLAY.",
+   "mandatory": true,
+   "method": "human_ear"
+  },
+  {
+   "id": "SAME",
+   "text": "Test criterion SAME.",
+   "mandatory": true,
+   "method": "human_ear"
+  }
+ ],
+ "changed_vs_prior": null
+}

@@ -1,0 +1,10 @@
+{
+ "permissions": {
+  "deny": [
+   "Edit(./data/**)",
+   "Write(./data/**)",
+   "Read(./data/studio.db)",
+   "Read(./data/studio.db-wal)"
+  ]
+ }
+}

@@ -1,0 +1,72 @@
+{
+ "schema_version": "1",
+ "shot": "T1-01",
+ "surface": "gemini_app_manual",
+ "_frames": [
+  "IMG-T1-01-FIRST",
+  "IMG-T1-01-LAST"
+ ],
+ "aspect_ratio": "16:9",
+ "duration_s": {
+  "min": 6,
+  "max": 8
+ },
+ "prompt": "The first attached image is the exact first frame of the video. The second attached image is the exact last frame of the video. One continuous shot, no cuts. The person in the lamp room slowly leans forward once and then holds completely still. The camera tilts slowly upwards. Everything else stays exactly as in the images. No dialogue, no music, no new people, no new objects, no on-screen text. The video ends on the second image.",
+ "blocks": {
+  "frame_roles": "image 1 first, image 2 last",
+  "subject_motion": "one slow lean forward",
+  "camera": "slow tilt upwards",
+  "environment_motion": "test",
+  "timing": "test",
+  "physics": "test",
+  "lighting": "test",
+  "must_hold": "test",
+  "must_not": "test",
+  "ending_state": "test"
+ },
+ "audio_instruction": "no speech, no music; natural sound may be generated and will not be used",
+ "feasibility": {
+  "moving_entities": 2,
+  "max_travel_frac_per_s": 0.22,
+  "new_content_frac": 0.42
+ },
+ "acceptance": [
+  {
+   "id": "START",
+   "text": "Test criterion START.",
+   "mandatory": true,
+   "method": "measured"
+  },
+  {
+   "id": "END",
+   "text": "Test criterion END.",
+   "mandatory": true,
+   "method": "measured"
+  },
+  {
+   "id": "ONE",
+   "text": "Test criterion ONE.",
+   "mandatory": true,
+   "method": "measured"
+  },
+  {
+   "id": "CORD",
+   "text": "Test criterion CORD.",
+   "mandatory": true,
+   "method": "inspected"
+  }
+ ],
+ "reject_if": [
+  "the person changes"
+ ],
+ "likely_failure": "drift",
+ "user_steps": [
+  "Open the Gemini app and start a NEW chat.",
+  "Choose Create video.",
+  "Attach the file ending _1_FIRST, then the file ending _2_LAST, in that order.",
+  "Choose 16:9.",
+  "Paste the prompt below, unchanged, and generate.",
+  "Download the video and drop it on this shot here. Choose your account label and write the model name you see."
+ ],
+ "changed_vs_prior": null
+}

@@ -1,0 +1,36 @@
+{
+ "schema_version": "1",
+ "package": "TF-XP-SCRAPE",
+ "cue": "CUE-SCRAPE",
+ "purpose": "Purpose of CUE-SCRAPE in the test film.",
+ "sound": "A wooden hatch lifted once",
+ "prompt": "Close, dry recording: one wooden hatch lifted out of its frame, wood rubbing on wood. Small room, no echo, no voices, no music.",
+ "duration_seconds": 1.2,
+ "prompt_influence": 0.5,
+ "loop": false,
+ "model_id": "eleven_text_to_sound_v3",
+ "output_format": "mp3_44100_128",
+ "perspective": "centred, close",
+ "acceptance": [
+  "one sound",
+  "no echo"
+ ],
+ "avoid": "voices, music",
+ "library_search": {
+  "terms": [
+   "cloth",
+   "wood"
+  ],
+  "hits": 0,
+  "why_not": "the test library holds none"
+ },
+ "manual_steps": [
+  "Open Sound Effects.",
+  "Paste the prompt and the duration.",
+  "Generate once and drop the file here."
+ ],
+ "placement": "test",
+ "how_takes_count": "Up to three imports.",
+ "file_name": "CUE_SCRAPE_T{nn}.mp3",
+ "changed_vs_prior": null
+}

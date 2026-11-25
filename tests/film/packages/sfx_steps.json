@@ -1,0 +1,36 @@
+{
+ "schema_version": "1",
+ "package": "TF-XP-STEPS",
+ "cue": "CUE-STEPS",
+ "purpose": "Purpose of CUE-STEPS in the test film.",
+ "sound": "Two steps on iron stairs",
+ "prompt": "Close, dry recording: two slow steps of leather boots on iron stairs, the second softer. No echo, no voices, no music.",
+ "duration_seconds": 1.8,
+ "prompt_influence": 0.45,
+ "loop": false,
+ "model_id": "eleven_text_to_sound_v3",
+ "output_format": "mp3_44100_128",
+ "perspective": "centred, close",
+ "acceptance": [
+  "one sound",
+  "no echo"
+ ],
+ "avoid": "voices, music",
+ "library_search": {
+  "terms": [
+   "cloth",
+   "wood"
+  ],
+  "hits": 0,
+  "why_not": "the test library holds none"
+ },
+ "manual_steps": [
+  "Open Sound Effects.",
+  "Paste the prompt and the duration.",
+  "Generate once and drop the file here."
+ ],
+ "placement": "test",
+ "how_takes_count": "Up to three imports.",
+ "file_name": "CUE_STEPS_T{nn}.mp3",
+ "changed_vs_prior": null
+}

@@ -1,0 +1,301 @@
+{
+ "$schema": "https://json-schema.org/draft/2020-12/schema",
+ "$id": "studio/voice-package/1",
+ "description": "One package, two ways to run it: by hand on the website or through the API. The content is identical.",
+ "type": "object",
+ "additionalProperties": false,
+ "required": [
+  "schema_version",
+  "package",
+  "method",
+  "voice_bindings",
+  "model",
+  "settings",
+  "output_format",
+  "lines",
+  "section",
+  "characters",
+  "manual_steps",
+  "import_checks",
+  "acceptance",
+  "changed_vs_prior"
+ ],
+ "properties": {
+  "schema_version": {
+   "const": "1"
+  },
+  "package": {
+   "type": "string"
+  },
+  "section": {
+   "type": "string"
+  },
+  "method": {
+   "enum": [
+    "per_line_tts",
+    "dialogue_scene",
+    "voice_change"
+   ]
+  },
+  "voice_bindings": {
+   "type": "array",
+   "items": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+     "speaker",
+     "binding_id",
+     "voice_name",
+     "provider_voice_id"
+    ],
+    "properties": {
+     "speaker": {
+      "type": "string"
+     },
+     "binding_id": {
+      "type": "string"
+     },
+     "voice_name": {
+      "type": "string"
+     },
+     "provider_voice_id": {
+      "type": "string"
+     }
+    }
+   },
+   "minItems": 1,
+   "maxItems": 10
+  },
+  "model": {
+   "type": "string"
+  },
+  "settings": {
+   "type": "object"
+  },
+  "output_format": {
+   "type": "object",
+   "additionalProperties": false,
+   "required": [
+    "requested",
+    "minimum"
+   ],
+   "properties": {
+    "requested": {
+     "type": "string"
+    },
+    "minimum": {
+     "type": "string"
+    }
+   }
+  },
+  "seed": {
+   "type": [
+    "integer",
+    "null"
+   ]
+  },
+  "lines": {
+   "type": "array",
+   "items": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+     "line_id",
+     "speaker",
+     "text",
+     "spoken_text",
+     "delivery",
+     "file_name"
+    ],
+    "properties": {
+     "line_id": {
+      "type": "string"
+     },
+     "speaker": {
+      "type": "string"
+     },
+     "text": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 2000
+     },
+     "spoken_text": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 2000,
+      "description": "exact text to paste or send, including approved pronunciation respellings and delivery tags. Words must equal 'text'; the linter checks it."
+     },
+     "delivery": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+       "intent",
+       "pace",
+       "distance"
+      ],
+      "properties": {
+       "intent": {
+        "type": "string"
+       },
+       "pace": {
+        "type": "string"
+       },
+       "distance": {
+        "type": "string"
+       },
+       "emotion_before": {
+        "type": "string"
+       },
+       "emotion_after": {
+        "type": "string"
+       },
+       "avoid": {
+        "type": "string"
+       }
+      }
+     },
+     "pronunciation": {
+      "type": "array",
+      "items": {
+       "type": "object",
+       "additionalProperties": false,
+       "required": [
+        "term",
+        "say_as"
+       ],
+       "properties": {
+        "term": {
+         "type": "string"
+        },
+        "say_as": {
+         "type": "string"
+        }
+       }
+      }
+     },
+     "context_before": {
+      "type": "string"
+     },
+     "context_after": {
+      "type": "string"
+     },
+     "file_name": {
+      "type": "string",
+      "pattern": "^[A-Z0-9_]+_T\\{nn\\}\\.(mp3|wav|opus|flac)$"
+     },
+     "takes_planned": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 6
+     },
+     "lip_sync": {
+      "type": "boolean"
+     },
+     "shot": {
+      "type": "string"
+     },
+     "target_seconds": {
+      "type": "array",
+      "items": {
+       "type": "number"
+      },
+      "minItems": 2,
+      "maxItems": 2
+     },
+     "timing_note": {
+      "type": "string"
+     }
+    }
+   },
+   "minItems": 1
+  },
+  "characters": {
+   "type": "integer"
+  },
+  "max_takes_total": {
+   "type": "integer",
+   "minimum": 1
+  },
+  "cost": {
+   "type": "object",
+   "additionalProperties": false,
+   "required": [
+    "credits_low",
+    "credits_high",
+    "basis"
+   ],
+   "properties": {
+    "credits_low": {
+     "type": "integer"
+    },
+    "credits_high": {
+     "type": "integer"
+    },
+    "cash_usd_list": {
+     "type": "number"
+    },
+    "basis": {
+     "type": "string"
+    }
+   }
+  },
+  "manual_steps": {
+   "type": "array",
+   "items": {
+    "type": "string"
+   },
+   "minItems": 3
+  },
+  "import_checks": {
+   "type": "array",
+   "items": {
+    "type": "string"
+   },
+   "minItems": 1
+  },
+  "acceptance": {
+   "type": "array",
+   "items": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+     "id",
+     "text",
+     "mandatory",
+     "method"
+    ],
+    "properties": {
+     "id": {
+      "type": "string"
+     },
+     "text": {
+      "type": "string"
+     },
+     "mandatory": {
+      "type": "boolean"
+     },
+     "method": {
+      "enum": [
+       "measured",
+       "transcript",
+       "human_ear"
+      ]
+     }
+    }
+   },
+   "minItems": 1
+  },
+  "changed_vs_prior": {
+   "type": [
+    "string",
+    "null"
+   ]
+  },
+  "casting": {
+   "type": "string"
+  },
+  "how_takes_count": {
+   "type": "string"
+  }
+ }
+}

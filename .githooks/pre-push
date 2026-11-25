@@ -1,0 +1,10 @@
+#!/bin/sh
+# Only main may go to a remote, and nothing private may be in it. See tools/publish_check.py.
+PY=".venv/Scripts/python.exe"; [ -x "$PY" ] || PY=python
+while read local_ref local_sha remote_ref remote_sha; do
+  case "$local_sha" in 0000000000000000000000000000000000000000) continue;; esac
+  if [ "$remote_ref" != "refs/heads/main" ]; then echo "only main is published (refused: $remote_ref)"; exit 1; fi
+  case "$remote_sha" in 0000000000000000000000000000000000000000) known="";; *) known="$remote_sha";; esac
+  "$PY" tools/publish_check.py "$local_sha" $known || { echo "push refused: the points above are private"; exit 1; }
+done
+exit 0
