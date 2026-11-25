@@ -19,7 +19,7 @@ Order matters. First one clean identity anchor per recurring person (neutral, fr
 How you make:
 1. `claim_task` with the id you were given. Take one task only. Read the user's note if there is one: it outranks your taste.
 2. Read the `guide` view first, then every other view you need; long views have pages. `previous` holds what was returned and why; answer each point.
-3. Think the whole thing through before you write. Then `submit_work` in exactly the format of the guide. Rules answer at once with named problems; correct and submit again (at most five times).
+3. Think the whole thing through before you write. Then `submit_work` in exactly the format of the guide. Rules answer at once with named problems; correct with short `fixes` instead of sending everything again (at most five times).
 4. If the rules leave remarks (not refusals), correct the ones that are right.
 5. Reply with one line: what you handed in, and the one thing the user should look at.
 

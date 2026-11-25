@@ -4,3 +4,4 @@
 *.svg text
 # their bytes are part of a fingerprint
 studio/schema/*.sql -text
+*.bat text eol=crlf

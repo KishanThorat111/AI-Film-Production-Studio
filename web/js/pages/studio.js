@@ -1,6 +1,6 @@
 // Agents, connectors, budget, readiness, backup, library, learning, log.
 import { h, api, post, act, ask, toast, usd, credits, when, media, cap, state } from "../core.js";
-import { tag, facts, head, empty, table, bar, field, fileDrop, jobRow, reviews } from "../ui.js";
+import { tag, facts, head, empty, table, bar, field, fileDrop, jobRow, reviews, sourceFields, SOUND_KIND } from "../ui.js";
 
 // ------------------------------------------------------------ agents
 async function agents(m) {
@@ -74,15 +74,19 @@ async function backup(m) {
 }
 
 // ------------------------------------------------------------ library
+function newSource() {
+  const RIGHTS = [["store", "keep it"], ["edit", "change it"], ["sync", "use it in a film"], ["commercial", "earn money with it"], ["youtube", "publish on YouTube"], ["reuse_films", "use it in further films"]], name = field("source", "Source", { size: 26 }), url = field("url", "Address of its terms", { size: 34 }), att = field("att", "Credit has to be shown", { options: [["", "no"], ["1", "yes"]] }), note = field("note", "Note", { size: 30 }), r = RIGHTS.map(([k, t]) => field(k, t, { options: [["unclear", "unclear"], ["yes", "yes"], ["no", "no"]] }));
+  return h("details", {}, h("summary", {}, "Add a source that is not listed"), h("div.card", {}, h("p.small.dim", {}, "Read its terms, then answer. What you are not sure about stays “unclear”."), h("div.row", {}, name.el, url.el, r.map(x => x.el), att.el, note.el, act("Add the source", () => post("library/terms", { source: name.get(), url: url.get(), attribution: !!att.get(), note: note.get(), rights: Object.fromEntries(r.map(x => [x.name, x.get()])) }), { done: "Added. Confirm it once you have read its terms." }))));
+}
 async function library(m) {
   const q = field("q", "Search", { size: 30 }), d = await api("library"), own = d.terms.filter(t => t.r_sync === "yes" && t.r_commercial === "yes");
-  const terms = field("terms", "Licence it came with", { options: [["", "choose…"], ...own.map(t => [t.id, t.source])] }), title = field("title", "What it is", { size: 30 });
+  const src = sourceFields(own), title = field("title", "What it is", { size: 30 }), kind = field("kind", "Kind of sound", { options: SOUND_KIND });
   m.append(head("Library", "Sounds that may be used in every film. Only material whose rights you have read and confirmed is admitted."));
   m.append(d.items.length ? h("div.card", {}, table(["Sound", "Kind", "Tags", ""], d.items.map(i => [i.title, i.kind, h("span.small.dim", {}, JSON.parse(i.tags_json).join(", ")), h("audio", { src: media(i.asset_id), controls: true, preload: "none" })]))) : empty("Nothing admitted yet."));
-  if (d.candidates.length) m.append(h("h2", {}, "Made by the studio, not admitted yet"), h("div.card", {}, table(null, d.candidates.map(c => [c.title, h("audio", { src: media(c.id), controls: true, preload: "none" }), act("Admit", () => post("library/admit", { asset: c.id }))]))));
-  m.append(h("h2", {}, "Bring in a sound"), h("div.card", {}, h("div.row", {}, title.el, terms.el), fileDrop("Sound file", "audio/*", (fd, f) => api(`library/import?terms=${encodeURIComponent(terms.get())}&title=${encodeURIComponent(title.get() || f.name)}`, { form: fd }))));
+  if (d.candidates.length) m.append(h("h2", {}, "Not admitted yet"), h("div.card", {}, table(null, d.candidates.map(c => [h("div", {}, c.title, h("div.small.faint", {}, c.made ? "made by the studio" : `${c.source || "source not recorded"}${c.verified_by ? "" : "; confirm its terms below first"}`)), h("audio", { src: media(c.id), controls: true, preload: "none" }), act("Admit", () => post("library/admit", { asset: c.id }))]))));
+  m.append(h("h2", {}, "Bring in a sound"), h("p.small.dim", {}, "For every film. A sound for one place in this film is brought in on the Sound page."), h("div.card", {}, fileDrop("Sound file", "audio/*", fd => api("library/import", { form: fd }), [title, kind, ...src])));
   const yn = v => tag(v === "yes" ? "good" : v === "no" ? "bad" : "warn", v);
-  m.append(h("h2", {}, "Licences"), h("p.small.dim", {}, "“Unclear” counts as no. A film cannot be finished with material whose terms you have not confirmed."), h("div.card", {}, table(["Source", "In a film", "YouTube", "Other films", "Credit", ""], d.terms.map(t => [h("div", {}, t.source, t.ambiguity ? h("div.small.faint", {}, t.ambiguity) : null), yn(t.r_sync), yn(t.r_youtube), yn(t.r_reuse_films), t.attribution_required ? "required" : "–", t.verified_by ? tag("good", "you confirmed") : h("div.row", {}, t.url ? h("a", { href: t.url, target: "_blank", rel: "noreferrer" }, "read") : null, act("I have read and confirm", () => post(`library/terms/${t.id}/verify`), { cls: "quiet" }))]))));
+  m.append(h("h2", {}, "Licences"), h("p.small.dim", {}, "“Unclear” counts as no. A film cannot be finished with material whose terms you have not confirmed."), h("div.card", {}, table(["Source", "In a film", "YouTube", "Other films", "Credit", ""], d.terms.map(t => [h("div", {}, t.source, t.ambiguity ? h("div.small.faint", {}, t.ambiguity) : null), yn(t.r_sync), yn(t.r_youtube), yn(t.r_reuse_films), t.attribution_required ? "required" : "–", t.verified_by ? tag("good", "you confirmed") : h("div.row", {}, t.url ? h("a", { href: t.url, target: "_blank", rel: "noreferrer" }, "read") : null, act("I have read and confirm", () => post(`library/terms/${t.id}/verify`), { cls: "quiet" }))]))), newSource());
 }
 
 // ------------------------------------------------------------ learning

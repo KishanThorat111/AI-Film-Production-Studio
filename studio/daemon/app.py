@@ -153,7 +153,7 @@ def create(vault=None, start_jobs=True) -> FastAPI:
     jobs = Jobs(db)
     ctx = Context(app, db, br, jobs)
     app.state.db, app.state.broker, app.state.jobs, app.state.ctx = db, br, jobs, ctx
-    app.state.launch, app.state.session = secrets.token_urlsafe(24), secrets.token_urlsafe(32)
+    app.state.launch, app.state.session, app.state.reopen = secrets.token_urlsafe(24), secrets.token_urlsafe(32), secrets.token_urlsafe(32)
     app.state.recovered, app.state.migrated = recovered, db.migration
     from . import handlers
     handlers.register(ctx)
@@ -169,9 +169,9 @@ def create(vault=None, start_jobs=True) -> FastAPI:
         if host not in ("127.0.0.1", "localhost") or (req.client and req.client.host not in ("127.0.0.1", "::1", "testclient")):
             return JSONResponse({"error": "local use only"}, 403)
         path = req.url.path
-        if path not in ("/launch", "/favicon.ico"):
+        if path not in ("/launch", "/reopen", "/favicon.ico"):
             if not secrets.compare_digest(req.cookies.get("studio", ""), app.state.session):
-                return HTMLResponse("<meta charset=utf-8><p style='font:16px sans-serif;margin:3em'>Open the studio with <b>Start Studio.bat</b>. This address only works from there.</p>", 401)
+                return HTMLResponse("<meta charset=utf-8><p style='font:16px sans-serif;margin:3em'>Double-click <b>Start Studio.bat</b>. It opens the studio here, also when it is already running.</p>", 401)
         if req.method not in ("GET", "HEAD"):
             origin = req.headers.get("origin", "")
             if not re.fullmatch(r"http://(127\.0\.0\.1|localhost):\d+", origin) or req.headers.get("x-studio") != "1":
@@ -211,6 +211,14 @@ def create(vault=None, start_jobs=True) -> FastAPI:
         r.set_cookie("studio", app.state.session, httponly=True, samesite="strict", path="/")
         return r
 
+    @app.post("/reopen")
+    async def reopen(req: Request):
+        """A second start on the same computer proves with the file in the data folder that it belongs to the user, and gets a new start link."""
+        if not secrets.compare_digest((await req.body()).decode("utf-8", "replace"), app.state.reopen):
+            return JSONResponse({"error": "not this studio"}, 403)
+        app.state.launch = secrets.token_urlsafe(24)
+        return {"code": app.state.launch}
+
     @app.get("/")
     def index():
         return FileResponse(WEB / "index.html")
@@ -222,8 +230,8 @@ def create(vault=None, start_jobs=True) -> FastAPI:
             return Response(status_code=404)
         return FileResponse(p, media_type=TYPES.get(p.suffix), headers={"Cache-Control": "no-cache"})
 
-    from . import routes_film, routes_make, routes_studio
-    for m in (routes_studio, routes_film, routes_make):
+    from . import routes_bring, routes_film, routes_make, routes_studio
+    for m in (routes_bring, routes_studio, routes_film, routes_make):
         m.add(app, ctx)
     app.add_middleware(Limit)
     return app

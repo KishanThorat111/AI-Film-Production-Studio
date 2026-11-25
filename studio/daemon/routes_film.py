@@ -142,7 +142,7 @@ def add(app, c: Context):
     def cut_state(req: Request):
         film = c.film(req)
         s = scope_of(req, film)
-        return {"scope": s, "scopes": gates.scopes(db, film), "commands": {k: v[1] for k, v in edit.COMMANDS.items()}, **cut.state(db, film, s)}
+        return {"scope": s, "scopes": gates.scopes(db, film), "commands": {k: v[1] for k, v in edit.COMMANDS.items()}, "placeable": cut.placeable(db, film, s), **cut.state(db, film, s)}
 
     @app.post("/api/cut/assemble")
     async def assemble(req: Request):
@@ -174,7 +174,7 @@ def add(app, c: Context):
     @app.post("/api/cut/note")
     async def note(req: Request):
         b = await c.json(req, "scope", "text")
-        return {"id": db.insert("cut_note", id=new_id("cn"), film_id=c.film(req), scope=b["scope"], frame=b.get("frame"), clip_id=b.get("clip"), text=b["text"][:1000], by="user", created_at=now())}
+        return {"id": db.insert("cut_note", id=new_id("cn"), film_id=c.film(req), scope=b["scope"], frame=b.get("frame"), clip_id=b.get("clip_id") or b.get("clip"), text=b["text"][:1000], by="user", created_at=now())}
 
     @app.post("/api/cut/render")
     async def render(req: Request):

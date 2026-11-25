@@ -728,6 +728,36 @@ def submit(db: DB, role, task_id, token, body: dict):
     return {"report": rid, "accepted": True}
 
 
+def patch(draft: dict, fixes: list) -> dict:
+    """A refused draft with only the named places changed, so that an agent need not write the whole document again."""
+    d = json.loads(json.dumps(draft))
+    if not isinstance(fixes, list) or not 0 < len(fixes) <= 60:
+        raise AgentRefused("fixes is a list of 1 to 60 entries {path, value} or {path, remove: true}")
+    for f in fixes:
+        path = str(f.get("path", "")).strip("/").split("/") if isinstance(f, dict) else [""]
+        if path == [""] or ("value" not in f and not f.get("remove")):
+            raise AgentRefused("every fix needs a path such as 'shots/3/purpose', and a value or remove: true")
+        at = d
+        try:
+            for k in path[:-1]:
+                at = at[int(k)] if isinstance(at, list) else at[k]
+            k = path[-1]
+            if isinstance(at, list):
+                if k == "-":
+                    at.append(f["value"])
+                elif f.get("remove"):
+                    del at[int(k)]
+                else:
+                    at[int(k)] = f["value"]
+            elif f.get("remove"):
+                del at[k]
+            else:
+                at[k] = f["value"]
+        except (KeyError, IndexError, ValueError, TypeError):
+            raise AgentRefused(f"your draft has no place '{'/'.join(path)}'; lists count from 0, '-' appends, nothing was changed") from None
+    return d
+
+
 def submit_work(db: DB, role, task_id, token, work: dict, changed: str | None = None):
     """A maker's proposal. Rules answer at once; nothing takes effect before the user approves."""
     t = _leased(db, role, task_id, token)

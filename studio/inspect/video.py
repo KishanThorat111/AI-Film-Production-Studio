@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import json
 import subprocess
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 import av
@@ -84,6 +85,12 @@ def temporal(fr: np.ndarray, camera="locked") -> dict:
     gray = np.stack([cv2.cvtColor(f, cv2.COLOR_BGR2GRAY) for f in fr]).astype(np.float32)
     H, W = gray.shape[1:]
     flags, S, shape_ok = [], {}, False
+    with ThreadPoolExecutor(3) as pool:                  # three long measurements that do not need each other
+        later = [pool.submit(motion_residual, gray), pool.submit(camera_path, gray), pool.submit(subject_series, gray) if camera == "locked" and n > 30 else None]
+        return _temporal(fr, gray, n, H, W, camera, later, flags, S, shape_ok)
+
+
+def _temporal(fr, gray, n, H, W, camera, later, flags, S, shape_ok):
     luma = gray.reshape(n, -1).mean(1)
     S["luma"] = luma
     S["sharp"] = np.array([cv2.Laplacian(g, cv2.CV_32F).var() for g in gray])
@@ -127,11 +134,11 @@ def temporal(fr: np.ndarray, camera="locked") -> dict:
                 steady = flips[min(a, len(flips) - 1):b + 1].mean() > .75                    # up, down, up, down: a model's pumping; a flame or a lamp wanders
                 flags.append(("luma flicker", a + 1, b + 1, "major" if steady and rel > .03 else "moderate", f"brightness alternates by about {2 * float(win[a:b + 1].max()):.1f} levels"))
     flags += colour_jumps(fr, n) + soft_runs(S["sharp"], n)
-    mo = motion_residual(gray)
+    mo = later[0].result()
     S["unexplained"] = mo["frac"]
     flags += mo["flags"]
     # camera path from background features
-    cam = camera_path(gray)
+    cam = later[1].result()
     S["cam_shift"], S["cam_zoom"] = cam["shift"], cam["zoom"]
     if camera == "locked":
         worst = float(np.nanmax(cam["shift"])) if n > 1 else 0
@@ -151,7 +158,7 @@ def temporal(fr: np.ndarray, camera="locked") -> dict:
             flags.append(("static area changed", 0, n - 1, "moderate", f"region {x * 100 // W}%,{y * 100 // H}% changed slowly without visible motion", [x / W, y / H, (x + w) / W, (y + h) / H]))
     # subject mask area and self-similarity (vanish, morph) for locked cameras
     if camera == "locked" and n > 30:
-        subj = subject_series(gray)
+        subj = later[2].result()
         S["subj_area"] = subj["area"]
         S["subj_sim"] = subj["sim"]
         shape_ok = subj["reliable"]
@@ -208,7 +215,7 @@ def motion_residual(gray):
         f = dis.calc(b, a, None)                      # where each pixel of b was in a
         w = cv2.remap(a, gx + f[..., 0], gy + f[..., 1], cv2.INTER_LINEAR, borderMode=cv2.BORDER_REPLICATE)
         e = cv2.absdiff(b, w).astype(np.float32)
-        m = np.abs(f).max(-1)
+        m = np.maximum(np.abs(f[..., 0]), np.abs(f[..., 1]))
         edge = (gx + f[..., 0] < 1) | (gx + f[..., 0] > W - 2) | (gy + f[..., 1] < 1) | (gy + f[..., 1] > H - 2)
         e[edge] = 0                                   # came from outside the picture
         gain = float(np.median(b[::4, ::4])) - float(np.median(w[::4, ::4]))
@@ -484,8 +491,10 @@ def usable_ranges(t, min_len=12):
 
 
 def inspect(path: Path, probe: dict, expect: dict, outdir: Path, first=None, last=None) -> dict:
-    tech = technical(path, probe, expect)
-    fr = load_frames(path)
+    with ThreadPoolExecutor(1) as pool:
+        tech = pool.submit(technical, path, probe, expect)
+        fr = load_frames(path)
+        tech = tech.result()
     if len(fr) < 2:
         return {"version": VERSION, "technical": tech, "outcome": "fail", "flags": [], "views": {}}
     t = temporal(fr, expect.get("camera", "locked"))

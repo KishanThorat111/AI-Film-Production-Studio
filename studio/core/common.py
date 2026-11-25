@@ -70,6 +70,88 @@ def judge(db: DB, attempt_id, verdict, note=""):
     flow.changed(db, a["film_id"], "judged")
 
 
+def used_by(db: DB, aid):
+    r = db.one("select t.title,a.attempt_no from attempt a join generation_target t on t.id=a.target_id where a.result_asset_id=?", aid)
+    return f"{r['title']}, attempt {r['attempt_no']}" if r else db.val("select 'library: '||title from library_item where asset_id=?", aid)
+
+
+def take_in(db: DB, tid, path: Path, kind, spec: dict, *, origin, reason="", provider=None, model=None, provenance=None):
+    """A file made by hand becomes the next attempt. Everything that can refuse it is asked before the file is stored."""
+    if assets.KIND_BY_EXT.get(path.suffix.lower()) != kind:
+        raise assets.ImportProblem({"image": "not an image", "video": "not a video file", "audio": f"{path.suffix or 'this file'} is not an audio file"}[kind])
+    has = {s["codec_type"] for s in assets.probe(path)["streams"]}
+    if {"image": "video"}.get(kind, kind) not in has:
+        raise assets.ImportProblem(f"the file contains no {'sound' if kind == 'audio' else 'picture'}")
+    reason = flow.may_start(db, tid, reason)
+    aid, new = assets.add(db, path, origin=origin, provider=provider, model=model, provenance=provenance, actor="user")
+    if not new and (u := used_by(db, aid)):
+        raise RuleRefused(f"this exact file has already been imported ({u})")
+    at = flow.start_attempt(db, tid, "manual", {**spec, "file": db.val("select sha256 from asset where id=?", aid)}, reason or None, [{"note": reason}] if flow.counted(db, tid) else [])
+    db.run("update attempt set result_asset_id=? where id=?", aid, at)
+    return aid, at
+
+
+def usable_terms(db: DB, terms, credit=""):
+    """Asked before a file is stored, so that a refusal leaves nothing behind."""
+    t = db.one("select * from licence_terms where id=?", terms)
+    if not t:
+        raise RuleRefused("choose where this file comes from")
+    if t["r_sync"] == "no":
+        raise RuleRefused(f"{t['source']}: these terms do not allow use in a film")
+    if t["attribution_required"] and len(credit.strip()) < 3:
+        raise RuleRefused(f"{t['source']}: write the credit that has to be shown (name, title, link)")
+    return t
+
+
+def licence(db: DB, aid, terms, credit=""):
+    """Where a file comes from, said by the user. Once said it stays, because an approval may rest on it."""
+    usable_terms(db, terms, credit)
+    old = db.one("select terms_id from asset_licence where asset_id=?", aid)
+    if old and old["terms_id"] != terms:
+        raise RuleRefused("the source of this file is already recorded")
+    assets.set_licence(db, aid, terms, None, credit.strip()[:400] or None)
+    db.event("user", "asset.licence", "asset", aid, {"terms": terms})
+
+
+def add_terms(db: DB, source, url, rights: dict, attribution: bool, note=""):
+    """A source the studio does not know yet, as the user read it. It still has to be confirmed before it counts."""
+    if len(source.strip()) < 3 or len(url.strip()) < 8:
+        raise RuleRefused("write the name of the source and the address of its terms")
+    keys = ("store", "edit", "sync", "commercial", "youtube", "reuse_films")
+    if any(rights.get(k) not in ("yes", "no", "unclear") for k in keys):
+        raise RuleRefused("answer yes, no or unclear for every right")
+    base = re.sub(r"[^a-z0-9]+", "_", source.lower()).strip("_")[:40] or "source"
+    tid, n = base, 1
+    while db.one("select 1 from licence_terms where id=?", tid):
+        n += 1
+        tid = f"{base}_{n}"
+    db.insert("licence_terms", id=tid, source=source.strip()[:120], version="read " + now()[:10], url=url.strip()[:300], evidence_relpath="docs/LICENCES.md", checked_on=now()[:10], **{f"r_{k}": rights[k] for k in keys}, subscription_bound=0, attribution_required=int(bool(attribution)), content_id_risk="unknown", ambiguity=note.strip()[:300] or None)
+    db.event("user", "terms.added", "licence_terms", tid)
+    return tid
+
+
+def about_file(db: DB, aid) -> dict:
+    """What the studio knows about one file: where it lies, where it came from, what may be done with it."""
+    a = db.one("select * from asset where id=?", aid)
+    if not a:
+        raise assets.Missing("there is no such file")
+    pr, p = json.loads(a["probe_json"] or "{}"), assets.path_of(db, aid)
+    v = next((s for s in pr.get("streams", []) if s.get("codec_type") == "video"), {})
+    l = db.one("select t.id,t.source,t.verified_by,t.r_sync,t.r_youtube,t.r_reuse_films,x.attribution_text from asset_licence x join licence_terms t on t.id=x.terms_id where x.asset_id=?", aid)
+    return {"id": aid, "kind": a["kind"], "origin": a["origin"], "kept": a["storage_class"], "path": str(p), "exists": p.exists(), "bytes": a["bytes"], "sha": a["sha256"], "created": a["created_at"], "provider": a["provider"], "model": a["provider_model"], "provenance": json.loads(a["provenance_json"] or "{}"),
+            "seconds": float(pr.get("format", {}).get("duration") or 0), "size": f"{v['width']}x{v['height']}" if v.get("width") else None, "licence": l, "used": used_by(db, aid),
+            "current_in": [f"{r['title']} (version {r['n']})" for r in db.q("select s.title,max(v.version_no) n from slot_current c join slot_version v on v.slot_id=c.slot_id and v.asset_id=c.asset_id join slot s on s.id=c.slot_id where c.asset_id=? group by s.id", aid)]}
+
+
+def reveal(p: Path):
+    """Show a file in the Windows Explorer. Only files of the studio."""
+    import subprocess
+    p = p.resolve()
+    if not p.is_relative_to(data_dir().resolve()) or not p.exists():
+        raise assets.Missing("this file is not there")
+    subprocess.Popen(f'explorer /select,"{p}"' if p.is_file() else f'explorer "{p}"')
+
+
 def _open_or_start(db, tid, spec, reason):
     """Continue an attempt whose request never got an answer; otherwise begin the next one."""
     prev = flow.attempts(db, tid)

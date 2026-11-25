@@ -2,7 +2,7 @@
 
 For the next session. What exists, what is proven, what is not. Pages about details are made from the code: [knowledge](knowledge/README.md).
 
-## State, 25 November 2026
+## State, 26 November 2026
 
 | Roadmap phase | State |
 |---|---|
@@ -15,7 +15,7 @@ For the next session. What exists, what is proven, what is not. Pages about deta
 | 6 Failures | Done for everything that can be simulated; real provider replies not seen |
 | 7 AgentOps, knowledge | Usage, agreement, misses, time records, generated knowledge. Routing experiments wait for data |
 | 8 Security, operations | Event hash chain, protected records, restricted project settings, health page, drills |
-| 9 Interface | New: 19 pages, design system, browser tests at three widths. **Not yet used by the user** |
+| 9 Interface | New: 20 pages, design system, browser tests at three widths. One way in for every file (`core/bring.py`, page Bring in files), next step on Home, stop and reopen. **Not yet used by the user** |
 | 10 Real films | **Not started: needs keys, recordings, clips and verdicts** |
 
 ## Evidence
@@ -24,6 +24,10 @@ For the next session. What exists, what is proven, what is not. Pages about deta
 - Inspection on planted defects ([held-out](evidence/inspection-bench-heldout.json)): 19/45 → 40/45; on footage it was not tuned on 34/36 with 1 false alarm in 4 clean clips. Rendered footage, not generated footage. **Slow melting of shapes is mostly missed**; that is left to eyes.
 - Foreign script “Low Water” with real agents in a throw-away studio: plan (accepted first time, 11 real open questions), review (11 usable findings), canon (21 entities), 9 designed shots with 3D sets, edit by the film-editor (11 commands, 2 refusals it corrected itself), render passed every check; image plan accepted first time; sound plan after three refusals (73 thousand tokens; its guide has been corrected since, not yet tried again). Otherwise 12 to 32 thousand output tokens per run; together about 193 thousand.
 - The first benchmark, from a restored copy: 1,134 frames, 36.8 frames/s, all checks pass, loudness −17.1 for −17 wanted.
+
+- Files by hand (`tests/test_bring.py`, in a real browser): placing, refusing, a second version, a clip without a package, a library sound into the edit, a Gemini clip from pair to edit. The start file was run for a first start, a second start, a closed window, a damaged database and a missing `.venv`.
+- Measured on 26 November: inspection of a 6 s clip 4.2 → 2.5 s with identical findings; delivery check of two minutes 5.0 → 3.5 s; every page answers in under 40 ms; the tests 755 → 598 s.
+- Not yet measured: agents correcting a refused draft with `fixes` instead of sending the whole document again.
 
 ## Decisions taken while building
 

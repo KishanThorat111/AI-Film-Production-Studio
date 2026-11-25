@@ -252,3 +252,13 @@ def test_the_agent_gets_only_its_tools(db, film):
     t = db.one("select * from task where id=?", s.request(db, film, "make_plan"))
     c = dispatch.command(t, "claude", ROOT / "x.json")
     assert "--strict-mcp-config" in c and "dontAsk" in c and "Bash" not in " ".join(c) and "submit_work" in " ".join(c)
+
+
+def test_a_refused_draft_is_corrected_with_fixes_only():
+    from studio.agents import service as s
+    d = {"a": {"list": [{"x": 1}, {"x": 2}]}, "b": "old"}
+    out = s.patch(d, [{"path": "a/list/1/x", "value": 9}, {"path": "/b", "value": "new"}, {"path": "a/list/-", "value": {"x": 3}}, {"path": "a/list/0", "remove": True}])
+    assert out == {"a": {"list": [{"x": 9}, {"x": 3}]}, "b": "new"} and d["b"] == "old"
+    for bad in ([], "x", [{"path": "a/nothing/1", "value": 1}], [{"path": "", "value": 1}], [{"path": "a/list/7/x", "value": 1}], [{"path": "b"}]):
+        with pytest.raises(s.AgentRefused):
+            s.patch(d, bad)

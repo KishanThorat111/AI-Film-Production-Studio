@@ -56,7 +56,7 @@ def add(app, c: Context):
     @app.get("/api/images")
     def image_list(req: Request):
         film = c.film(req)
-        return {**images.image_state(db, film), "mode": flow.mode(db, film, "stills"), "allowance": bool(__import__("studio.core.films", fromlist=["x"]).envelope(db, film, "image"))}
+        return {**images.image_state(db, film), "mode": flow.mode(db, film, "stills"), "terms": db.q("select id,source,attribution_required from licence_terms where r_sync='yes' order by id<>'own',source"), "allowance": bool(__import__("studio.core.films", fromlist=["x"]).envelope(db, film, "image"))}
 
     @app.post("/api/images/{img}/estimate")
     async def image_estimate(img: str, req: Request):
@@ -71,9 +71,9 @@ def add(app, c: Context):
         return await c.work(lambda: images.generate_image(db, br, film, img, b["provider"], b.get("prompt") or None, b.get("reason", ""), price))
 
     @app.post("/api/images/{img}/import")
-    async def image_import(img: str, req: Request, file: UploadFile = File(...), note: str = Form(""), reason: str = Form("")):
+    async def image_import(img: str, req: Request, file: UploadFile = File(...), note: str = Form(""), reason: str = Form(""), terms: str = Form(""), credit: str = Form("")):
         film = c.film(req)
-        return await c.with_upload(file, lambda p: images.import_image(db, film, img, p, note, reason))
+        return await c.with_upload(file, lambda p: images.import_image(db, film, img, p, note, reason, terms, credit))
 
     # ------------------------------------------------ voice
     @app.get("/api/voice")
@@ -100,7 +100,8 @@ def add(app, c: Context):
     @app.get("/api/sfx")
     def sfx(req: Request):
         film = c.film(req)
-        return {"packages": voice.sfx_state(db, film), "mode": flow.mode(db, film, "sfx")}
+        return {"packages": voice.sfx_state(db, film), "mode": flow.mode(db, film, "sfx"), "cues": voice.cues_state(db, film), "library": voice.library_picks(db), "scenes": db.q("select id,number,slug from scene where film_id=? order by number", film),
+                "terms": db.q("select id,source,attribution_required from licence_terms where r_sync='yes' order by id<>'own',source")}
 
     @app.post("/api/sfx/{pid}/import")
     async def sfx_import(pid: str, file: UploadFile = File(...), credits: str = Form(""), reason: str = Form("")):
@@ -119,7 +120,8 @@ def add(app, c: Context):
     # ------------------------------------------------ Gemini video, by hand
     @app.get("/api/video")
     def video(req: Request):
-        return {"shots": motion.video_state(db, c.film(req)), "labels": db.q("select label from account_label order by label")}
+        film = c.film(req)
+        return {"shots": motion.video_state(db, film), "labels": db.q("select label from account_label order by label"), "others": motion.other_shots(db, film)}
 
     @app.post("/api/video/{shot}/pair")
     async def pair(shot: str):

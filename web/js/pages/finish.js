@@ -1,16 +1,16 @@
 // Review, cut, release.
 import { h, api, post, act, ask, paid, toast, refresh, usd, when, media, secs, cap, state, go } from "../core.js";
-import { tag, facts, head, empty, table, field, items, problems, reviews, checks, judge, fileDrop, player, picture, tabs, copyBox } from "../ui.js";
+import { tag, facts, head, empty, table, field, items, problems, reviews, checks, judge, fileDrop, fileInfo, player, picture, tabs, copyBox } from "../ui.js";
 
 // ------------------------------------------------------------ review: your eyes first, then the findings
 async function review(m, arg) {
   const [d, s] = await Promise.all([api("review"), api("status")]);
   m.append(head("Review", "Your own verdict first. Measurements and findings appear after it, so that they cannot lead you; disagreements are the measure of the inspection."));
-  m.append(h("details", {}, h("summary", {}, "Try the inspection on any clip"), fileDrop("A clip of yours", "video/*", fd => api("inspect/trial", { form: fd }))));
+  m.append(h("details", {}, h("summary", {}, "Try the inspection on any clip"), h("p.small.dim", {}, "Only a trial: the clip is not attached to a shot and starts no attempt. Local and free."), fileDrop("A clip of yours", "video/*", fd => api("inspect/trial", { form: fd }))));
   const list = d.items;
   if (!list.length) return m.append(empty("No clip, take or picture has been imported into this film yet."));
   const kinds = [["all", `All ${list.length}`], ["video", "Clips"], ["image", "Pictures"], ["audio", "Sound"]];
-  const [t, box] = tabs(kinds, arg || "all", (k, b) => list.filter(x => k === "all" || x.kind === k).forEach(x => b.append(one(x, s.film))));
+  const [t, box] = tabs(kinds, kinds.some(k => k[0] === arg) ? arg : "all", (k, b) => list.filter(x => k === "all" || x.kind === k).forEach(x => b.append(one(x, s.film))));
   m.append(t, box);
 }
 function one(x, film) {
@@ -22,7 +22,7 @@ function one(x, film) {
   return h("section.card", { id: x.id }, h("div.head", {}, h("h3", {}, name), h("span.small.faint", {}, x.attempt ? `attempt ${x.attempt.attempt_no}` : "", " ", when(x.created_at)), h("span.push", {}, x.attempt ? tag(x.attempt.outcome) : null)),
     vid ? p.el : x.kind === "audio" ? h("audio", { src: media(x.id), controls: true, preload: "none" }) : h("div", { style: "max-width:640px" }, picture(x.id, name)),
     !show ? h("div.gap", {}, h("p", {}, vid ? "Watch it at full speed, then step through what bothered you." : x.kind === "audio" ? "Listen twice." : "Look at it."), h("div.row.gap", {}, note.el, act("Good", () => verdict("good")), act("Fixable", () => verdict("fixable")), act("Bad", () => verdict("bad"))))
-      : h("div", {}, blind ? h("p.small", {}, tag("blind", "your blind verdict"), " ", blind.verdict, " ", h("span.dim", {}, JSON.parse(blind.tags_json || "{}").note || "")) : null, checks(x.checks, x.id), x.reports.length ? reviews(x.reports) : h("p.small.dim", {}, "No inspector has looked at it yet; the task is on the Agents page."), judge(x.attempt, "look"),
+      : h("div", {}, blind ? h("p.small", {}, tag("blind", "your blind verdict"), " ", blind.verdict, " ", h("span.dim", {}, JSON.parse(blind.tags_json || "{}").note || "")) : null, checks(x.checks, x.id), x.reports.length ? reviews(x.reports) : h("p.small.dim", {}, "No inspector has looked at it yet; the task is on the Agents page."), judge(x.attempt, "look"), fileInfo(x.id),
         vid && x.attempt?.outcome === "accepted" ? h("details", {}, h("summary", {}, "Pass this clip for the finished film"), h("p.small.dim", {}, "Accepting means you want to use it. Passing means its known defects are no reason against the finished film."), h("div.row.gap", {}, why.el, act("Pass it", () => post(`clip/${x.id}/approve`, { reason: why.get() }), { done: "Passed" }))) : null,
         vid && !x.checks.some(c => c.check_name === "gemini") ? h("div.gap", {}, paid("Second opinion by Gemini", async () => (await post(`inspect/${x.id}/estimate`)).musd, n => post(`inspect/${x.id}/gemini`, { expect: n }), { title: "Second opinion", what: "The clip is sent to the Gemini API for inspection only. It is evidence, never a verdict.", money: usd }, { cls: "quiet" })) : null));
 }
@@ -51,9 +51,10 @@ async function cut(m, arg) {
   for (const a of tl.audio) (["dialogue", "narration"].includes(a.bus) ? voice : other).push({ ...a, a: Math.round(a.at_sample / spf), b: Math.round((a.at_sample + (a.dur_samples || spf * fps * 2)) / spf), sound: true, st: d.status["voice " + a.id] || d.status["sound " + a.id] });
   for (const p of d.planned || []) voice.push({ ...p, reason: p.text, st: p.status });
   m.append(h("div.lanes", {}, tl.video.slice().reverse().map(t => lane(t.track ? `Picture ${t.track}` : "Picture", t.clips.map(c => ({ ...c, a: c.at, b: c.at + c.dur, st: d.status[c.id] })), c => good(c.st) ? "" : "stand")), lane("Speech", voice, c => good(c.st) ? "voice" : "voice stand"), [["foley", "Foley and effects"], ["ambience", "Ambience"], ["music", "Music"]].map(([b, t]) => { const l = other.filter(x => (x.bus === "hard_fx" ? "foley" : x.bus) === b); return l.length ? lane(t, l, () => "snd") : null; }), tl.silences.length ? lane("Silence", tl.silences.map((s, i) => ({ id: "silence " + (i + 1), a: s.from_frame, b: s.from_frame + s.frames, reason: s.reason })), () => "sil") : null), detail);
-  const base = d.rev;
+  const base = d.rev; let cursor = 0;
   const send = (cmd, dry) => post("cut/commands", { scope, base, commands: [].concat(cmd), dry });
   function pick(c) {
+    cursor = c.a; headLine(c.a);
     const note = field("t", "Ask for a change here", { size: 50 }), dur = field("d", "Length in frames", { type: "number", size: 6, value: c.b - c.a }), gain = field("g", "Level in dB", { type: "number", size: 6, value: typeof c.gain_db === "number" ? c.gain_db : 0 }), why = field("w", "Reason", { size: 30 });
     const raw = d.doc.clips.find(x => x.id === c.id), rs = d.doc.audio.find(x => x.id === c.id);
     detail.replaceChildren(h("div.card", {}, h("div.head", {}, h("h3", {}, c.id), c.st ? tag(c.st) : null, h("span.small.dim", {}, `${secs(c.a, fps)} to ${secs(c.b, fps)} · frames ${c.a} to ${c.b}`)), h("p", {}, c.reason || ""), raw?.effects?.length ? h("p.small.dim", {}, "Effects: ", raw.effects.map(e => e.op).join(", ")) : null,
@@ -61,11 +62,33 @@ async function cut(m, arg) {
       raw ? h("div.row.gap", {}, dur.el, why.el, act("Change length", () => send({ op: "trim", id: c.id, dur: +dur.get(), reason: why.get() }), { done: r => r.changes.join("; ") }), raw && c.id !== d.doc.clips.filter(x => !x.track)[0]?.id ? act("Earlier", () => { const l = d.doc.clips.filter(x => !x.track), i = l.findIndex(x => x.id === c.id); return send({ op: "move", id: c.id, before: l[i - 1].id, reason: why.get() || "order" }); }, { cls: "quiet" }) : null, act("Remove", () => send({ op: "remove", id: c.id, reason: why.get() }), { cls: "danger" })) : null,
       rs ? h("div.row.gap", {}, gain.el, why.el, act("Change level", () => send({ op: "set_sound", id: c.id, fields: { gain_db: +gain.get() }, reason: why.get() })), act("Remove", () => send({ op: "remove", id: c.id, reason: why.get() }), { cls: "danger" })) : null));
   }
+  m.append(adder(d, () => pl ? pl.frame() : cursor, send));
   const open = d.notes.filter(n => n.state === "open"), why = field("why", "Why you approve it with open points", { size: 40 }), cur = d.revisions[0];
   m.append(h("div.two", {}, h("section", {}, h("h2", {}, "What the rules say"), problems(d.problems), d.final_blockers.length ? h("details", {}, h("summary", {}, `${d.final_blockers.length} files may not be used in a finished film yet`), h("ul", {}, d.final_blockers.slice(0, 12).map(b => h("li", {}, h("span.small", {}, b.why, " ", h("span.faint", {}, b.what.slice(0, 80))))))) : null),
     h("section", {}, h("h2", {}, "Decide"), h("div.card", {}, cur?.status === "approved" ? h("p", {}, tag("approved"), ` Revision ${cur.rev} is your approved edit.`) : h("div.stack", {}, h("p.small.dim", {}, "Watch the render of this revision first."), why.el, h("div.row", {}, act("Approve this edit", () => post("cut/approve", { id: cur.id, reason: why.get() }), { cls: "primary", done: "Approved" })))),
       open.length ? [h("h2", {}, "Open notes"), h("ul.plain", {}, open.map(n => h("li", {}, n.frame != null ? h("span.mono.small", {}, secs(n.frame, fps), " ") : null, n.text)))] : null)), revs(d), d.notes.some(n => n.by !== "user") ? h("details", {}, h("summary", {}, "Requests from the editor"), h("ul", {}, d.notes.filter(n => n.by !== "user").map(n => h("li", {}, n.clip_id ? h("b", {}, n.clip_id, " ") : null, n.text)))) : null,
     h("p.small.dim", {}, h("a", { href: "/api/subtitles?film=" + encodeURIComponent(state.film) + "&scope=" + encodeURIComponent(scope), target: "_blank" }, "Captions of this edit")));
+}
+// Put something into the edit at the playhead. What is named here is filled with the approved take, sound or picture, now or later.
+function adder(d, at, send) {
+  const p = d.placeable, base = d.timeline.video.find(t => !t.track)?.clips || [], why = field("why", "Reason", { size: 30 }), gain = field("g", "Level in dB", { type: "number", size: 5, value: 0 }), len = field("len", "Stop after (frames; empty: play all)", { type: "number", size: 8 });
+  const opts = [...p.lines.map(x => ["line|" + x.id, `Line, ${x.ready ? "approved take" : "no take yet"}: ${x.text}`]), ...p.cues.map(x => ["cue|" + x.id, `Sound, ${x.status}: ${x.purpose}`]), ...p.library.map(x => ["asset|" + x.id, `Library, ${x.kind.replace("_", " ")}: ${x.title}`])];
+  const what = field("what", "Sound", { options: [["", "choose…"], ...opts] }), bus = field("bus", "Track", { options: [["", "as it is meant"], ["dialogue", "dialogue"], ["narration", "narration"], ["foley", "foley"], ["hard_fx", "effects"], ["ambience", "ambience"], ["music", "music"]] });
+  const pic = field("pic", "Picture", { options: [["", "choose…"], ...p.shots.map(x => ["shot|" + x.id, "Shot " + x.code]), ...p.images.map(x => ["image|" + x, "Image " + x])] }), dur = field("dur", "Frames", { type: "number", size: 5, value: 48 });
+  const name = s => { let n = s.split(":").at(-1).replace(/[^A-Za-z0-9._-]/g, "_").slice(0, 30), i = 2; const used = new Set([...d.doc.clips, ...d.doc.audio].map(x => x.id)); while (used.has(n)) n = n.replace(/-\d+$/, "") + "-" + i++; return n; };
+  const under = f => base.filter(c => c.at <= f).at(-1) || base[0];
+  return h("details", {}, h("summary", {}, "Add a sound or a picture at the playhead"), h("div.card", {},
+    h("div.row", {}, what.el, bus.el, gain.el, len.el, act("Add the sound", () => {
+      if (!what.get() || !why.get()) throw new Error("Choose a sound and write the reason");
+      const [k, ...r] = what.get().split("|"), id = r.join("|"), f = at(), c = under(f), x = k === "line" ? p.lines.find(l => l.id === id) : k === "cue" ? p.cues.find(l => l.id === id) : p.library.find(l => l.id === id);
+      return send({ op: "place_sound", sound: { id: name(k === "asset" ? x.title.replaceAll(" ", "-") : id), source: { [k]: id }, bus: bus.get() || x.bus, at: { clip: c.id, frame: f - c.at }, ...(len.get() ? { frames: +len.get() } : {}), ...(+gain.get() ? { gain_db: +gain.get() } : {}), reason: why.get() }, reason: why.get() });
+    }, { done: r => r.changes.join("; ") })),
+    h("div.row.gap", {}, pic.el, dur.el, act("Add the picture after the clip under the playhead", () => {
+      if (!pic.get() || !why.get()) throw new Error("Choose a picture and write the reason");
+      const [k, ...r] = pic.get().split("|"), id = r.join("|");
+      return send({ op: "place", clip: { id: name(id), source: { [k]: id }, dur: +dur.get(), effects: [], reason: why.get() }, after: under(at()).id, reason: why.get() });
+    }, { done: r => r.changes.join("; ") })),
+    h("div.row.gap", {}, why.el, h("span.cost", {}, "local, free")), h("p.small.dim", {}, "Move the playhead with the player, or click a clip above. Any file you brought in and accepted is offered here by its line, sound, image or shot; it does not have to be placed again when you accept a better version.")));
 }
 const revs = d => h("details", {}, h("summary", {}, `${d.revisions.length} revision${d.revisions.length === 1 ? "" : "s"}`), table(["Revision", "State", "By", "Commands", "Made", ""], d.revisions.map(r => [r.rev, tag(r.status), r.author, r.commands, when(r.created_at), h("span.small.dim", {}, r.note || "")])));
 

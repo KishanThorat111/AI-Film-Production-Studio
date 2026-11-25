@@ -11,7 +11,7 @@ from ..connectors.broker import Broker, Refused
 from ..inspect import image as ii
 from ..inspect import video as iv
 from . import assets, films, flow, images, packages
-from .common import _close_task, _open_or_start, checks, reviews_of, save_check, views_dir
+from .common import _close_task, _open_or_start, checks, reviews_of, save_check, take_in, views_dir
 from .db import DB, RuleRefused, data_dir, new_id, now, sha
 
 
@@ -68,9 +68,9 @@ def make_pair(db: DB, shot):
     if not a or not b:
         raise RuleRefused("approve the first and the last frame on the Images page first")
     out, name = [], safe(shot)
-    f = films.get(db, film)
+    w, h = gemini_size(db, film)
     for src, tag in ((a, "1_FIRST"), (b, "2_LAST")):
-        img, info = ii.conform(ii.read(assets.path_of(db, src)), f["width"], f["height"])
+        img, info = ii.conform(ii.read(assets.path_of(db, src)), w, h)
         tmp = data_dir() / "tmp"
         tmp.mkdir(parents=True, exist_ok=True)
         p = tmp / f"{name}_{tag}.png"
@@ -105,8 +105,8 @@ def approve_pair(db: DB, fid, accept_warnings=False):
     m, film = plan_of(db, shot), film_of_shot(db, shot)
     deps = [("frame_pair", fid), ("asset", f["first_asset_id"]), ("asset", f["last_asset_id"])] + frame_slots(db, shot)
     flow.approve(db, "G4_frame_pair", "frame_pair", fid, deps, "user", {"checks": rep["outcome"]})
-    d, name, fl = dict(m["draft"]), safe(shot), films.get(db, film)
-    d["attachments"] = [{"order": i + 1, "file": f"{name}_{i + 1}_{t}.png", "role": r, "sha256": db.val("select sha256 from asset where id=?", a), "width": fl["width"], "height": fl["height"]}
+    d, name, (gw, gh) = dict(m["draft"]), safe(shot), gemini_size(db, film)
+    d["attachments"] = [{"order": i + 1, "file": f"{name}_{i + 1}_{t}.png", "role": r, "sha256": db.val("select sha256 from asset where id=?", a), "width": gw, "height": gh}
                         for i, (t, r, a) in enumerate((("FIRST", "first_frame", f["first_asset_id"]), ("LAST", "last_frame", f["last_asset_id"])))]
     pid = packages.register(db, "video", film, d, manual_profile="gemini_app", frame_pair=fid, maker="motion-engineer")
     folder = package_folder(shot)
@@ -134,21 +134,11 @@ def log_generation(db: DB, pid, state, label="", model="", mode="", usage=""):
 def import_video(db: DB, pid, path: Path, label="", model="", usage="", reason=""):
     if not flow.live(db, "G5_package", pid):
         raise RuleRefused("this package is not approved, or something it depends on has changed")
-    if assets.KIND_BY_EXT.get(path.suffix.lower()) != "video":
-        raise assets.ImportProblem("not a video file")
     pr = db.one("select f.*,v.prompt from video_package v join frame_pair f on f.id=v.frame_pair_id where v.id=?", pid)
     shot = shot_of_pair(db, pr["id"])
     film, doc = film_of_shot(db, shot), packages.doc_of(db, "video", pid)
-    assets.probe(path)                                   # refuse unreadable files before anything is recorded
     tid = flow.target(db, film, "video", shot, f"Gemini clip for {shot}")
-    real = flow.counted(db, tid)
-    if real and real[-1]["outcome"] == "pending":
-        raise RuleRefused("judge the previous clip first")
-    aid, new = assets.add(db, path, origin="manual_video", provider="gemini app", model=model, provenance={"package": pid, "label": label, "film": film, "shot": shot}, actor="user")
-    if not new:
-        raise RuleRefused("this exact file has already been imported")
-    at = flow.start_attempt(db, tid, "manual", {"provider": "gemini app", "model": model, "prompt": doc["prompt"], "package": pid, "file": db.val("select sha256 from asset where id=?", aid)}, reason or None, [{"note": reason}] if real else [])
-    db.run("update attempt set result_asset_id=? where id=?", aid, at)
+    aid, at = take_in(db, tid, path, "video", {"provider": "gemini app", "model": model, "prompt": doc["prompt"], "package": pid}, origin="manual_video", reason=reason, provider="gemini app", model=model, provenance={"package": pid, "label": label, "film": film, "shot": shot})
     ga = log_generation(db, pid, "generated", label, model, "", usage)
     db.run("update gen_attempt set result_asset_id=? where id=?", aid, ga)
     assets.set_licence(db, aid, "gemini_app")
@@ -157,6 +147,37 @@ def import_video(db: DB, pid, path: Path, label="", model="", usage="", reason="
     others = match_other_shots(db, aid, shot)
     flow.changed(db, film, "clip.arrived")
     return {"asset": aid, "attempt": at, "report": rep, "better_match": others}
+
+
+def import_clip(db: DB, film, shot, path: Path, label="", model="", reason=""):
+    """A clip the user made without a studio package. It is the user's right; it is recorded as such, inspected, and follows the same attempts and judging."""
+    if film_of_shot(db, shot) != film:
+        raise RuleRefused("the film has no such shot")
+    if len((reason or "").strip()) < 10:
+        raise RuleRefused("write how this clip was made and why it did not come from a package (at least ten characters)")
+    tid = flow.target(db, film, "video", shot, f"Clip for {shot}")
+    aid, at = take_in(db, tid, path, "video", {"provider": "gemini app", "model": model, "outside_package": reason.strip()}, origin="manual_video", reason=reason, provider="gemini app", model=model, provenance={"outside_package": reason.strip(), "label": label, "film": film, "shot": shot})
+    assets.set_licence(db, aid, "gemini_app")
+    m = db.one("select first_image,last_image from motion_plan where shot_id=?", shot)
+    first, last = (images.approved(db, film, m[k]) for k in ("first_image", "last_image")) if m else (None, None)
+    rep = inspect_video(db, aid, shot, first, last)
+    flow.changed(db, film, "clip.arrived")
+    return {"asset": aid, "attempt": at, "report": rep, "better_match": match_other_shots(db, aid, shot)}
+
+
+def other_shots(db: DB, film):
+    """Shots without a planned generation. A clip made another way can still be brought in for them."""
+    out = []
+    for r in db.q("select sh.id,sh.code from shot sh join scene s on s.id=sh.scene_id where s.film_id=? and sh.state<>'dropped' and not exists(select 1 from motion_plan m where m.shot_id=sh.id) order by s.number,sh.ordinal,sh.code", film):
+        tg = db.one("select * from generation_target where film_id=? and kind='video' and ref_id=?", film, r["id"])
+        out.append({**r, "target": tg, "limit": flow.limit(db, tg["id"]) if tg else 3, "used": len(flow.counted(db, tg["id"])) if tg else 0})
+    return out
+
+
+def gemini_size(db: DB, film):
+    """The app makes 16:9 or 9:16. A wider film is cropped in the edit, not in the generator."""
+    f = films.get(db, film)
+    return (1920, 1080) if f["width"] >= f["height"] else (1080, 1920)
 
 
 def inspect_video(db: DB, aid, shot=None, first=None, last=None, doc=None):
@@ -168,10 +189,12 @@ def inspect_video(db: DB, aid, shot=None, first=None, last=None, doc=None):
     want = {"aspect": 16 / 9, "duration": (d["min"], d["max"]), "camera": (m or {}).get("camera", "locked")}
     if film:
         fl = films.get(db, film)
-        want.update(aspect=fl["width"] / fl["height"], fps=fl["fps_num"])
+        gw, gh = gemini_size(db, film)
+        want.update(aspect=gw / gh, fps=fl["fps_num"])
     rep = iv.inspect(p, json.loads(db.val("select probe_json from asset where id=?", aid)), want, views_dir(aid), f, l)
     if film:
         from ..inspect import face
+        rep["outside_package"] = json.loads(db.val("select provenance_json from asset where id=?", aid)).get("outside_package")
         for e, refs in images.refs_for_shot(db, film, shot).items():
             name, t = db.val("select name from canon_entity where id=?", e), face.track(p, refs)
             rep.setdefault("faces", {})[e] = t

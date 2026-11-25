@@ -6,13 +6,13 @@ import time
 from pathlib import Path
 
 import psutil
-from fastapi import File, Request, UploadFile
+from fastapi import File, Form, Request, UploadFile
 from fastapi.responses import FileResponse, Response
 
 from ..agents import dispatch, service
 from ..connectors.adapters import REGISTRY
 from ..connectors.broker import Refused
-from ..core import assets, backup, common, cut, films, flow, ops, preflight
+from ..core import assets, backup, common, cut, films, flow, ops, preflight, voice
 from ..core.db import new_id, now
 from ..engine import synth
 from .app import BadRequest, Context, disk_free_gb, number
@@ -199,7 +199,7 @@ def add(app, c: Context):
     # ------------------------------------------------ library and rights
     @app.get("/api/library")
     def library(q: str = ""):
-        return {"items": common.search_library(db, q), "terms": db.q("select * from licence_terms order by id"), "candidates": [{**x, "title": json.loads(x["provenance_json"])["synth"]} for x in cut.library_ready(db) if not x["admitted"]]}
+        return {"items": common.search_library(db, q), "terms": db.q("select * from licence_terms order by id"), "candidates": [x for x in cut.library_ready(db) if not x["admitted"]]}
 
     @app.post("/api/library/terms/{tid}/verify")
     def verify(tid: str):
@@ -212,21 +212,16 @@ def add(app, c: Context):
         prov = db.val("select provenance_json from asset where id=?", b["asset"])
         if prov is None:
             raise assets.Missing("there is no such file")
-        title = b.get("title") or json.loads(prov).get("synth", "untitled")
-        info = synth.SOUNDS.get(title)
-        common.admit(db, b["asset"], b.get("scope", "studio"), b.get("scope_ref"), b.get("kind") or (info[1] if info else "foley"), title, b.get("tags") or (info[2] if info else []))
+        prov = json.loads(prov)
+        title = b.get("title") or prov.get("synth") or prov.get("title") or "untitled"
+        info = synth.SOUNDS.get(title) if "synth" in prov else None
+        common.admit(db, b["asset"], b.get("scope", "studio"), b.get("scope_ref"), b.get("kind") or (info[1] if info else prov.get("library_kind") or "foley"), title, b.get("tags") or (info[2] if info else title.lower().split()))
         return {"ok": True}
 
     @app.post("/api/library/import")
-    async def library_import(file: UploadFile = File(...), terms: str = "", title: str = "", kind: str = "foley"):
-        if not db.one("select 1 from licence_terms where id=?", terms):
-            raise BadRequest("choose the licence this sound came with")
-
-        def go(p):
-            aid, new = assets.add(db, p, origin="licensed", provenance={"title": title or file.filename}, actor="user")
-            assets.set_licence(db, aid, terms)
-            return {"asset": aid, "new": new}
-        return await c.with_upload(file, go)
+    async def library_import(file: UploadFile = File(...), terms: str = Form(""), title: str = Form(""), kind: str = Form("foley"), credit: str = Form("")):
+        name = title.strip() or Path(file.filename or "sound").stem
+        return await c.with_upload(file, lambda p: voice.import_library(db, p, terms, name, kind, credit))
 
     # ------------------------------------------------ learning and versions
     @app.get("/api/learning")

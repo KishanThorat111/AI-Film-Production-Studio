@@ -78,6 +78,22 @@ def start_attempt(db: DB, tid, origin, spec: dict, reason=None, findings=None) -
     return aid
 
 
+def may_start(db: DB, tid, reason="") -> str:
+    """Would the next attempt be accepted? Says in plain words why not. Returns the reason to record."""
+    t, real, reason = db.one("select state from generation_target where id=?", tid), [a for a in counted(db, tid) if a["outcome"] != "pending" or a["result_asset_id"]], (reason or "").strip()      # one that was begun and never sent is taken back when the next one starts
+    if t["state"] == "approved":
+        raise RuleRefused("this is approved; choose 'Ask for another version' first")
+    if t["state"] == "stopped" or len(real) >= limit(db, tid):
+        raise RuleRefused("all attempts are used; nothing more is taken in unless you allow another attempt")
+    if real and real[-1]["outcome"] == "pending":
+        raise RuleRefused("judge the previous one first")
+    if real and not reason and real[-1]["outcome"] == "accepted":
+        reason = "another version: " + (db.val("select reason from target_reopen where target_id=? order by at desc limit 1", tid) or "")
+    if real and len(reason) < 10:
+        raise RuleRefused("write what was wrong with the previous one and what changed (at least ten characters)")
+    return reason
+
+
 def withdraw(db: DB, attempt_id, reason, by="user"):
     """An attempt that produced nothing and cost nothing does not count. The database checks both."""
     with db.tx():

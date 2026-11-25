@@ -7,7 +7,7 @@ from pathlib import Path
 from ..connectors.broker import Broker, Refused
 from ..inspect import image as ii
 from . import assets, films, flow
-from .common import _open_or_start, checks, save_check
+from .common import _open_or_start, checks, licence, save_check, take_in, usable_terms
 from .db import DB, RuleRefused, data_dir, sha
 
 ASPECT = {"16:9": 16 / 9, "9:16": 9 / 16, "3:4": 3 / 4, "4:3": 4 / 3, "1:1": 1.0, "2:3": 2 / 3, "3:2": 3 / 2, "21:9": 21 / 9}
@@ -127,6 +127,28 @@ def _reviews(db, attempts):
     return [{**r, "body": json.loads(r.pop("body_json"))} for r in db.q(f"select r.id,r.verdict,r.body_json,t.role,t.target_id from report r join task t on t.id=r.task_id where t.target_type='asset' and t.target_id in({','.join('?' * len(ids))}) order by r.rowid", *ids)]
 
 
+def add_need(db: DB, film, code, kind, *, entity=None, shot=None, role=None, aspect="16:9", prompt=""):
+    """The user names a picture the film needs, so that it can be imported or generated without asking an agent first."""
+    import re
+    from .project import put_image
+    code = code.strip()
+    if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._-]{1,39}", code):
+        raise RuleRefused("a short name of letters, digits, dots and dashes")
+    if db.one("select 1 from image_spec where film_id=? and code=?", film, code):
+        raise RuleRefused("there is already an image with this name")
+    if kind not in ("anchor", "reference", "frame") or aspect not in ASPECT:
+        raise RuleRefused("unknown kind or format")
+    if kind == "frame":
+        if role not in ("still", "first", "last", "plate", "layer") or not db.one("select 1 from shot sh join scene s on s.id=sh.scene_id where sh.id=? and s.film_id=?", shot, film):
+            raise RuleRefused("a frame belongs to a shot: choose the shot and whether it is the still, the first or the last frame")
+    elif not db.one("select 1 from film_canon where film_id=? and entity_id=?", film, entity):
+        raise RuleRefused("an identity picture belongs to a person, place or thing of the canon")
+    n = db.val("select coalesce(max(ordinal),-1)+1 from image_spec where film_id=?", film)
+    put_image(db, film, code, {"ordinal": n, "kind": kind, "entity_id": entity if kind != "frame" else None, "shot_id": shot if kind == "frame" else None, "role": role if kind == "frame" else None, "aspect": aspect, "refs_json": [], "prompt": prompt.strip() or "brought in by hand", "base_code": None, "shows_json": [entity] if entity and kind == "frame" else []})
+    db.event("user", "image.needed", "image_spec", code, {"kind": kind})
+    return code
+
+
 # ------------------------------------------------------------ making
 def spec_for(db: DB, film, code, provider, prompt=None):
     if provider not in PROVIDERS:
@@ -175,18 +197,15 @@ def generate_image(db: DB, br: Broker, film, code, provider, prompt=None, reason
     return r
 
 
-def import_image(db: DB, film, code, path: Path, note="", reason=""):
+def import_image(db: DB, film, code, path: Path, note="", reason="", terms="", credit=""):
     """An image made elsewhere may stand in for an API image; it follows the same attempts and checks."""
     spec(db, film, code)
-    if assets.KIND_BY_EXT.get(path.suffix.lower()) != "image":
-        raise assets.ImportProblem("not an image")
+    if terms:
+        usable_terms(db, terms, credit)
     tid = flow.target(db, film, "image", code, code)
-    real = flow.counted(db, tid)
-    aid, new = assets.add(db, path, origin="authored", provenance={"imported_for": code, "film": film, "note": note}, actor="user")
-    if not new:
-        raise RuleRefused("this exact file has already been imported")
-    at = flow.start_attempt(db, tid, "manual", {"provider": "by hand", "file": db.val("select sha256 from asset where id=?", aid), "note": note}, reason or None, [{"note": reason}] if real else [])
-    db.run("update attempt set result_asset_id=? where id=?", aid, at)
+    aid, at = take_in(db, tid, path, "image", {"provider": "by hand", "note": note}, origin="authored", reason=reason, provenance={"imported_for": code, "film": film, "note": note})
+    if terms:
+        licence(db, aid, terms, credit)
     rep = check(db, film, code, aid)
     flow.changed(db, film, "image.arrived")
     return {"asset": aid, "attempt": at, "report": rep}

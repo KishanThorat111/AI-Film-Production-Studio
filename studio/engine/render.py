@@ -310,9 +310,7 @@ class Renderer:
         tr = c.get("transform", {})
         pos, anc = ev(tr.get("pos"), f, [0, 0]), tr.get("anchor", [0, 0])
         sa, da = sw / sh, self.w / self.h
-        fit = (1.0, da and 1.0)
-        fx, fy = (sa / da, 1.0) if sa < da else (1.0, da / sa)       # fill the frame, keep proportions
-        fx, fy = (1.0, sa / da) if sa < da else (da / sa, 1.0)
+        fx, fy = (1.0, sa / da) if sa < da else (da / sa, 1.0)        # fill the frame, keep proportions
         if c["kind"] == "solid":
             fx = fy = 1.0
         cur = g.run("place", tex, {"x": pos[0], "y": pos[1], "scale": ev(tr.get("scale"), f, 1.0), "rot": ev(tr.get("rot"), f, 0.0), "opacity": 1.0, "fit_x": fx, "fit_y": fy, "ax": anc[0], "ay": anc[1], "lin": 1 if self.cur8 else 0}, gf)
@@ -535,18 +533,31 @@ def sync_offset(path: Path, wav: Path, at: float = 0.0) -> float:
 
 def qa(path: Path, tl: dict, wav: Path | None = None) -> dict:
     """What is checked on the finished file, over its whole length, before it is registered."""
-    from . import sound
     pr = json.loads(subprocess.run(["ffprobe", "-v", "error", "-show_streams", "-show_format", "-of", "json", str(path)], capture_output=True, text=True).stdout)
     v = next(s for s in pr["streams"] if s["codec_type"] == "video")
     a = [s for s in pr["streams"] if s["codec_type"] == "audio"]
     items, fps = [], tl["fps"][0] / tl["fps"][1]
-    n = count_frames(path)
+    from concurrent.futures import ThreadPoolExecutor
+    with ThreadPoolExecutor(1) as pool:                        # every frame, once, while the sound is measured
+        run = pool.submit(subprocess.run, ["ffmpeg", "-v", "error", "-nostats", "-progress", "pipe:1", "-i", str(path), "-map", "0", "-fps_mode", "passthrough", "-f", "null", "-"], capture_output=True, text=True, timeout=3600)
+        sound_items = _qa_sound(path, tl, wav, a, fps)
+        whole = run.result()
+    told, errors = whole.stdout, whole.stderr
+    n = int(([l.split("=")[1] for l in told.splitlines() if l.startswith("frame=")] or ["-1"])[-1])
     items.append(("frame count", "pass" if n == tl["frames"] else "fail", f"{n} of {tl['frames']}"))
     items.append(("size", "pass" if [v["width"], v["height"]] == list(tl["size"]) or v["width"] < tl["size"][0] else "fail", f"{v['width']}x{v['height']}"))
     num = lambda s: (lambda p: int(p[0]) / max(1, int(p[1])))(s.split("/"))
     items.append(("constant frame rate", "pass" if abs(num(v["avg_frame_rate"]) - fps) < .01 and abs(num(v["r_frame_rate"]) - fps) < .01 else "fail", f"{num(v['avg_frame_rate']):.3f}"))
-    items.append(("decodes cleanly", "pass" if not subprocess.run(["ffmpeg", "-v", "error", "-i", str(path), "-f", "null", "-"], capture_output=True, text=True).stderr.strip() else "fail", ""))
+    items.append(("decodes cleanly", "fail" if errors.strip() or whole.returncode else "pass", errors.strip()[:200]))
     items.append(("colour tags", "pass" if all(v.get(k) == "bt709" for k in ("color_primaries", "color_transfer", "color_space")) and v.get("color_range") == "tv" else "fail", f"{v.get('color_primaries')}/{v.get('color_transfer')}/{v.get('color_space')}/{v.get('color_range')}"))
+    items += sound_items
+    o = [i[1] for i in items]
+    return {"outcome": "fail" if "fail" in o else "warn" if "warn" in o else "pass", "items": items}
+
+
+def _qa_sound(path: Path, tl: dict, wav, a, fps) -> list:
+    from . import sound
+    items = []
     if a and wav:
         length = tl["frames"] / fps
         for name, at in [("sync", 0.0)] + ([("sync near the end", max(0.0, length - 45))] if length > 90 else []):
@@ -581,5 +592,4 @@ def qa(path: Path, tl: dict, wav: Path | None = None) -> dict:
             e, k = acc[i]
             lv = 20 * np.log10((e / k) ** .5 + 1e-9) if k else -120
             items.append((f"silence at frame {s['from_frame']}", "pass" if lv <= s["max_dbfs"] else "fail", f"{lv:.0f} dB, wanted {s['max_dbfs']:.0f} or lower"))
-    o = [i[1] for i in items]
-    return {"outcome": "fail" if "fail" in o else "warn" if "warn" in o else "pass", "items": items}
+    return items

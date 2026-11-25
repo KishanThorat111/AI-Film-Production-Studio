@@ -31,6 +31,17 @@ def figure(im, x, sx=1.0, face=True):
         cv2.line(im, (c[0] - 14, 212), (c[0] + 14, 212), (40, 40, 110), 4)
 
 
+_grain = {}
+
+
+def grain(r, shape, sigma):
+    """Noise that differs in every frame: a few frames of it, shifted at random. Making it anew for each frame took longer than the inspection."""
+    if shape not in _grain:
+        _grain[shape] = np.random.default_rng(7).standard_normal((6, *shape), np.float32)
+    g = _grain[shape][int(r.integers(6))]
+    return np.roll(g, (int(r.integers(shape[0])), int(r.integers(shape[1]))), (0, 1)) * np.float32(sigma)
+
+
 def clip(tmp, defect=None, seed=3, light=True):
     r = np.random.default_rng(seed + 100)
     bg = background(seed)
@@ -73,7 +84,7 @@ def clip(tmp, defect=None, seed=3, light=True):
         if defect == "glitch" and i == 66:
             f = np.roll(f, 40, 1)
         if not (defect == "freeze" and 60 < i < 90):
-            f = f + r.normal(0, 1.6, f.shape)
+            f = f + grain(r, f.shape, 1.6)
             if defect == "freeze" and i == 60:
                 frozen = f.copy()
         ff.stdin.write(np.clip(f, 0, 255).astype(np.uint8).tobytes())

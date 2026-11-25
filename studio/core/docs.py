@@ -222,7 +222,7 @@ def _lint_images(db, film, scope, d):
     if len(codes) != len(d["images"]):
         out.append(P("critical", "images", "codes repeat"))
     fl = films.get(db, film)
-    wide = {(16, 9): "16:9", (9, 16): "9:16", (1, 1): "1:1"}.get(_ratio(fl["width"], fl["height"]))
+    wide = "16:9" if fl["width"] > fl["height"] else "9:16" if fl["width"] < fl["height"] else "1:1"
     depth = {}
 
     def deep(c, seen=()):
@@ -278,8 +278,9 @@ def _lint_motion(db, film, scope, d):
     for c, role in ((d["first_image"], "first"), (d["last_image"], "last")):
         if not db.one("select 1 from image_spec where film_id=? and code=?", film, c):
             out.append(P("critical", role, f"there is no image {c}"))
-    fl = films.get(db, film)
-    fake = {**d["draft"], "attachments": [{"order": i + 1, "file": f"{n}.png", "role": r, "sha256": "0" * 64, "width": fl["width"], "height": fl["height"]} for i, (n, r) in enumerate((("a", "first_frame"), ("b", "last_frame")))]}
+    from .motion import gemini_size
+    gw, gh = gemini_size(db, film)
+    fake = {**d["draft"], "attachments": [{"order": i + 1, "file": f"{n}.png", "role": r, "sha256": "0" * 64, "width": gw, "height": gh} for i, (n, r) in enumerate((("a", "first_frame"), ("b", "last_frame")))]}
     return out + [P(p["severity"], f"draft {p['where']}", p["text"]) for p in packages.lint_video(fake)]
 
 

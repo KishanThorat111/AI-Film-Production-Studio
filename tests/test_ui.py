@@ -13,7 +13,7 @@ from tests.conftest import ROOT, review
 from tests.fakes import GOOD
 
 sync_playwright = pytest.importorskip("playwright.sync_api").sync_playwright
-PAGES = ("Home", "Script", "Plan and canon", "Shots", "Images", "Gemini video", "Voices", "Sound effects", "Review", "Cut", "Release", "Agents", "Connectors", "Budget", "Readiness", "Backup", "Library", "Learning", "Log")
+PAGES = ("Home", "Script", "Plan and canon", "Shots", "Images", "Gemini video", "Voices", "Sound", "Bring in files", "Review", "Cut", "Release", "Agents", "Connectors", "Budget", "Readiness", "Backup", "Library", "Learning", "Log")
 
 
 @pytest.fixture
@@ -127,13 +127,13 @@ def test_key_test_enable_price_generate(page, site, fake):
     nav(page, "Budget")
     page.get_by_role("button", name="Release for sound").click()
     page.locator("td", has_text="2,000").first.wait_for()
-    nav(page, "Sound effects")
+    nav(page, "Sound")
     c = page.locator("section#CUE-CLOTH")
     c.get_by_role("button", name="Approve this package").click()
     toast(page, "has not reviewed")
     review(db, "sfx", db.val("select id from sfx_package where cue_id='CUE-CLOTH'"), "story-editor")
     nav(page, "Log")
-    nav(page, "Sound effects")
+    nav(page, "Sound")
     c.get_by_role("button", name="Approve this package").click()
     c.get_by_role("button", name="Generate this sound").wait_for()
     c.get_by_role("button", name="Generate this sound").click()
@@ -186,7 +186,7 @@ def test_a_failure_answers_the_seven_questions(page, site, fake):
     from tests.test_money_and_connectors import sfx_ready
     sfx_ready(br)
     fake.behaviour = "quota"
-    nav(page, "Sound effects")
+    nav(page, "Sound")
     page.locator("section#CUE-CLOTH").get_by_role("button", name="Generate this sound").click()
     agree(page)
     page.locator("#banner", has_text="Paused").wait_for(timeout=15000)
@@ -206,7 +206,7 @@ def test_a_lost_answer_is_settled_by_the_user(page, site, fake):
     from tests.test_money_and_connectors import sfx_ready
     sfx_ready(br)
     fake.behaviour = "fail500"
-    nav(page, "Sound effects")
+    nav(page, "Sound")
     page.locator("section#CUE-CLOTH").get_by_role("button", name="Generate this sound").click()
     agree(page)
     page.locator("#banner", has_text="may have been charged").wait_for(timeout=15000)

@@ -29,10 +29,31 @@ def ensure_sounds(db: DB):
 
 
 def library_ready(db: DB):
-    return db.q("select a.id,a.provenance_json,(select 1 from library_item l where l.asset_id=a.id) admitted from asset a where provenance_json like '%\"synth\"%'")
+    """Sounds that could be in the library: made by the studio, or brought in for it."""
+    out = []
+    for r in db.q("select a.id,a.origin,a.provenance_json,(select 1 from library_item l where l.asset_id=a.id) admitted,t.source,t.verified_by from asset a left join asset_licence x on x.asset_id=a.id left join licence_terms t on t.id=x.terms_id "
+                  "where a.kind='audio' and (provenance_json like '%\"synth\"%' or (a.origin in('licensed','recorded') and not exists(select 1 from attempt b where b.result_asset_id=a.id)))"):
+        p = json.loads(r.pop("provenance_json") or "{}")
+        out.append({**r, "title": p.get("synth") or p.get("title") or "untitled", "kind": p.get("library_kind"), "made": "synth" in p})
+    return out
 
 
 # ------------------------------------------------------------ state for pages: reads only
+BUS = {"foley": "foley", "hard_fx": "hard_fx", "ambience": "ambience", "room_tone": "ambience", "music": "music", "motif": "music"}
+
+
+def placeable(db: DB, film, scope):
+    """What can be put into this edit by name: lines and sounds of the scene, library sounds, shots, approved images."""
+    sc = db.val("select id from scene where id=?", scope[6:]) if scope.startswith("scene:") else None
+    lines = edit.lines_of(db, film, sc) if sc else []
+    cues = db.q("select id,kind,purpose from sound_cue where scene_id=? and kind<>'designed_silence'", sc) if sc else []
+    return {"lines": [{"id": l["id"], "text": l["text"][:70], "bus": "narration" if l["narration"] else "dialogue", "ready": bool(edit.slot_asset(db, film, "voice", l["id"]))} for l in lines],
+            "cues": [{"id": c["id"], "purpose": c["purpose"][:70], "bus": BUS[c["kind"]], "status": edit.heard(db, film, {"cue": c["id"]}, False)[1]} for c in cues],
+            "library": [{"id": r["asset_id"], "title": r["title"], "kind": r["kind"], "bus": BUS.get(r["kind"], "foley")} for r in db.q("select asset_id,title,kind from library_item where retired_at is null and kind<>'impulse_response' order by kind,title")],
+            "shots": db.q("select id,code from shot where scene_id=? and state<>'dropped' order by ordinal,code", sc) if sc else [],
+            "images": [r["code"] for r in db.q("select i.code from image_spec i join slot s on s.film_id=i.film_id and s.kind='image' and s.ref_id=i.code join slot_current c on c.slot_id=s.id where i.film_id=? and i.retired=0 and i.kind='frame' order by i.ordinal", film)]}
+
+
 def state(db: DB, film, scope):
     cur = edit.latest(db, film, scope)
     if not cur:

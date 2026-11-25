@@ -7,8 +7,11 @@ from pathlib import Path
 from ..connectors.broker import Broker, Refused
 from ..inspect import audio as ia
 from . import assets, flow, packages
-from .common import _close_task, _open_or_start, checks, save_check
+from .common import _close_task, _open_or_start, checks, licence, save_check, take_in, usable_terms
 from .db import DB, RuleRefused, new_id, now
+
+
+CONTINUOUS = ("ambience", "room_tone", "music", "motif")
 
 
 def voice_state(db: DB, film):
@@ -45,16 +48,9 @@ def import_voice(db: DB, pid, line_id, path: Path, credits=None, note="", reason
     line = next(l for l in doc["lines"] if l["line_id"] == line_id)
     if packages.is_casting(doc) and (not voice.strip() or voice_kind not in ("provider_permanent", "library")):
         raise RuleRefused("write the exact name of the voice you used, and whether it has the infinity sign")
-    if assets.KIND_BY_EXT.get(path.suffix.lower()) != "audio":
-        raise assets.ImportProblem(f"{path.suffix or 'this file'} is not an audio file")
     tid = flow.target(db, film, "voice", line_id, f"{line['speaker']}: {line['text'][:60]}")
-    aid, new = assets.add(db, path, origin="manual_audio", provider="elevenlabs", model=doc["model"], provenance={"package": pid, "line": line_id, "settings": settings or doc["settings"], "note": note}, actor="user")
-    if not new:
-        raise RuleRefused("this exact file has already been imported")
-    prev = flow.counted(db, tid)
-    at = flow.start_attempt(db, tid, "manual", {"provider": "elevenlabs", "model_id": doc["model"], "settings": settings or doc["settings"], "text": line["spoken_text"], "file": db.val("select sha256 from asset where id=?", aid), "note": note},
-                            reason or None, [{"note": reason}] if prev else [])
-    db.run("update attempt set result_asset_id=? where id=?", aid, at)
+    aid, at = take_in(db, tid, path, "audio", {"provider": "elevenlabs", "model_id": doc["model"], "settings": settings or doc["settings"], "text": line["spoken_text"], "note": note}, origin="manual_audio", reason=reason,
+                      provider="elevenlabs", model=doc["model"], provenance={"package": pid, "line": line_id, "settings": settings or doc["settings"], "note": note})
     assets.set_licence(db, aid, "elevenlabs_speech", "starter")
     pr = json.loads(db.val("select probe_json from asset where id=?", aid))
     rep = ia.inspect_voice(assets.path_of(db, aid), pr, line["text"])
@@ -85,13 +81,96 @@ def sfx_state(db: DB, film):
     return out
 
 
+def cues_state(db: DB, film):
+    """Every sound the film needs, whatever fills it: a generated effect, a recording, the library, or nothing yet."""
+    from . import edit
+    out = []
+    for c in db.q("select c.*,s.number from sound_cue c join scene s on s.id=c.scene_id where s.film_id=? order by s.number,c.rowid", film):
+        tg = db.one("select * from generation_target where film_id=? and kind='sfx' and ref_id=?", film, c["id"])
+        pk = db.one("select id from sfx_package where cue_id=? order by rev desc limit 1", c["id"])
+        a, st, _ = edit.heard(db, film, {"cue": c["id"]}, False)
+        atts = db.q("select a.*,x.provenance_json from attempt_counted a left join asset x on x.id=a.result_asset_id where a.target_id=? order by a.attempt_no", tg["id"]) if tg else []
+        for x in atts:
+            x["checks"] = checks(db, x["result_asset_id"]) if x["result_asset_id"] else []
+            x["licence"] = db.val("select terms_id from asset_licence where asset_id=?", x["result_asset_id"]) if x["result_asset_id"] else None
+        out.append({"id": c["id"], "scene": c["number"], "kind": c["kind"], "purpose": c["purpose"], "sourcing": c["sourcing"], "spec": json.loads(c["spec_json"]), "package": pk["id"] if pk else None, "target": tg, "limit": flow.limit(db, tg["id"]) if tg else 3, "used": len(atts), "attempts": atts, "heard": a, "status": st})
+    return out
+
+
+def add_cue(db: DB, film, scene, kind, purpose):
+    """A sound the user wants: ambience, music, anything. It has no file until one is brought in."""
+    from .db import new_id as nid
+    if not db.one("select 1 from scene where id=? and film_id=?", scene, film):
+        raise RuleRefused("choose a scene")
+    if kind not in ("foley", "hard_fx", "ambience", "room_tone", "music", "motif"):
+        raise RuleRefused("choose what kind of sound it is")
+    if len(purpose.strip()) < 5:
+        raise RuleRefused("write what the sound is for")
+    n = 1 + db.val("select count(*) from sound_cue c join scene s on s.id=c.scene_id where s.film_id=?", film)
+    cid = f"{film}:{kind.upper().replace('_', '-')}-{n:02d}"
+    while db.one("select 1 from sound_cue where id=?", cid):
+        n += 1
+        cid = f"{film}:{kind.upper().replace('_', '-')}-{n:02d}"
+    db.insert("sound_cue", id=cid, scene_id=scene, kind=kind, purpose=purpose.strip()[:300], spec_json={"by": "user"}, sourcing="record")
+    db.event("user", "cue.added", "sound_cue", cid, {"kind": kind})
+    return cid
+
+
+def import_cue(db: DB, film, cue, path: Path, terms, title="", reason="", credit=""):
+    """A recording, ambience or music made or found elsewhere. The licence is recorded with the file; judging it is the same as for every other sound."""
+    c = db.one("select c.* from sound_cue c join scene s on s.id=c.scene_id where c.id=? and s.film_id=?", cue, film)
+    if not c:
+        raise RuleRefused("the film has no such sound")
+    t = usable_terms(db, terms, credit)
+    tid = flow.target(db, film, "sfx", cue, c["purpose"][:80])
+    aid, at = take_in(db, tid, path, "audio", {"provider": t["source"], "title": title}, origin="recorded" if terms == "own" else "licensed", reason=reason, provenance={"title": title or path.stem, "cue": cue, "film": film, "source": t["source"], "file": path.name})
+    licence(db, aid, terms, credit)
+    rep = ia.measure(assets.path_of(db, aid), json.loads(db.val("select probe_json from asset where id=?", aid)), {"continuous": c["kind"] in CONTINUOUS})
+    save_check(db, aid, "sound", rep)
+    flow.changed(db, film, "sound.arrived")
+    return {"asset": aid, "attempt": at, "report": rep}
+
+
+def use_library(db: DB, film, cue, asset):
+    """Fill a cue with a library sound the user has heard."""
+    if not db.one("select 1 from sound_cue c join scene s on s.id=c.scene_id where c.id=? and s.film_id=?", cue, film):
+        raise RuleRefused("the film has no such sound")
+    l = db.one("select title from library_item where asset_id=? and retired_at is null", asset)
+    if not l:
+        raise RuleRefused("this sound is not in the library")
+    s = flow.slot(db, film, "sfx", cue, cue)
+    v = flow.add_version(db, s, asset, "user", f"library: {l['title']}")
+    flow.decide_version(db, v, True)
+    tid = flow.target(db, film, "sfx", cue, cue)
+    db.run("update sound_cue set sourcing='reuse' where id=?", cue)
+    db.event("user", "cue.library", "sound_cue", cue, {"asset": asset, "target": tid})
+    flow.changed(db, film, "sound.arrived")
+
+
+def import_library(db: DB, path: Path, terms, title, kind, credit=""):
+    """A sound for every film. It is stored with its licence; admitting it needs confirmed terms."""
+    usable_terms(db, terms, credit)
+    if assets.KIND_BY_EXT.get(path.suffix.lower()) != "audio":
+        raise assets.ImportProblem("not an audio file")
+    aid, new = assets.add(db, path, origin="recorded" if terms == "own" else "licensed", provenance={"title": title.strip()[:120] or path.stem, "library_kind": kind, "file": path.name}, actor="user")
+    if not new:
+        raise RuleRefused("this exact file has already been imported")
+    licence(db, aid, terms, credit)
+    save_check(db, aid, "sound", ia.measure(assets.path_of(db, aid), json.loads(db.val("select probe_json from asset where id=?", aid)), {"continuous": kind in CONTINUOUS}))
+    return {"asset": aid, "new": new}
+
+
+def library_picks(db: DB):
+    return db.q("select asset_id id,title,kind from library_item where retired_at is null order by kind,title")
+
+
 def _sfx_spec(doc):
     return {"provider": "elevenlabs", "text": doc["prompt"], "duration_seconds": doc["duration_seconds"], "prompt_influence": doc["prompt_influence"], "loop": doc["loop"], "model_id": doc["model_id"], "output_format": doc["output_format"]}
 
 
 def _sfx_import(db, aid, doc, pid):
     assets.set_licence(db, aid, "elevenlabs_sfx", "starter")        # film only: the database keeps it out of the shared library
-    rep = ia.measure(assets.path_of(db, aid), json.loads(db.val("select probe_json from asset where id=?", aid)), {"duration": (doc["duration_seconds"] * .6, doc["duration_seconds"] * 1.4)})
+    rep = ia.measure(assets.path_of(db, aid), json.loads(db.val("select probe_json from asset where id=?", aid)), {"duration": (doc["duration_seconds"] * .6, doc["duration_seconds"] * 1.4), "continuous": bool(doc["loop"])})
     save_check(db, aid, "sound", rep)
     _close_task(db, "sfx", pid, True)
     return rep
@@ -102,15 +181,8 @@ def import_sfx(db: DB, pid, path: Path, credits=None, reason=""):
     doc = json.loads(p["doc_json"])
     if not flow.live(db, "G9_sfx_package", pid):
         raise RuleRefused("approve this sound first")
-    if assets.KIND_BY_EXT.get(path.suffix.lower()) != "audio":
-        raise assets.ImportProblem("not an audio file")
     tid = flow.target(db, p["film_id"], "sfx", p["cue_id"], doc["sound"])
-    aid, new = assets.add(db, path, origin="manual_audio", provider="elevenlabs", model=doc["model_id"], provenance={"package": pid}, actor="user")
-    if not new:
-        raise RuleRefused("this exact file has already been imported")
-    prev = flow.counted(db, tid)
-    at = flow.start_attempt(db, tid, "manual", {**_sfx_spec(doc), "file": db.val("select sha256 from asset where id=?", aid), "credits": credits}, reason or None, [{"note": reason}] if prev else [])
-    db.run("update attempt set result_asset_id=? where id=?", aid, at)
+    aid, at = take_in(db, tid, path, "audio", {**_sfx_spec(doc), "credits": credits}, origin="manual_audio", reason=reason, provider="elevenlabs", model=doc["model_id"], provenance={"package": pid})
     return {"asset": aid, "attempt": at, "report": _sfx_import(db, aid, doc, pid)}
 
 

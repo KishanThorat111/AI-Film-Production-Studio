@@ -63,13 +63,14 @@ export function act(label, fn, o = {}) {
   b.addEventListener("click", async () => {
     if (o.confirm && !await ask(o.confirm, o.why ? h("p", {}, o.why) : null, { yes: label, danger: o.cls === "danger" })) return;
     b.disabled = true; b.classList.add("busy");
+    const t0 = Date.now(), tick = setInterval(() => { const s = Math.round((Date.now() - t0) / 1000); if (s >= 2) b.textContent = `${o.busy || label} ${s} s`; }, 500);
     try {
       const r = await fn(b);
       if (r === null) return;
       if (o.done) toast(typeof o.done === "function" ? o.done(r) : o.done);
       if (!o.stay) await refresh();
     } catch (e) { toast(e.message, true); if (o.always) await refresh(); }
-    finally { b.disabled = !!o.disabled; b.classList.remove("busy"); }
+    finally { clearInterval(tick); b.textContent = label; b.disabled = !!o.disabled; b.classList.remove("busy"); }
   });
   return b;
 }

@@ -11,6 +11,7 @@ import soundfile as sf
 
 from studio.core import assets, base, cut, edit, flow, packages, script, work
 from studio.core.db import DB, RuleRefused
+from tests.test_inspect import grain
 from tests.conftest import ROOT, review
 
 F = "TESTFILM"
@@ -256,7 +257,7 @@ def clip_from(fig, path, n=168, vanish=False):
         k = min(1, max(0, (i - 24) / 100))
         k = k * k * (3 - 2 * k)
         f = cv2.resize(fig(int(900 - 60 * k), int(400 + 120 * k)), (1280, 720), interpolation=cv2.INTER_AREA).astype(np.float32)
-        ff.stdin.write(np.clip(f + r.normal(0, 1.2, f.shape), 0, 255).astype(np.uint8).tobytes())
+        ff.stdin.write(np.clip(f + grain(r, f.shape, 1.2), 0, 255).astype(np.uint8).tobytes())
     ff.stdin.close()
     ff.wait()
     return path

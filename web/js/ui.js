@@ -76,19 +76,40 @@ export function approval(kind, id, rv) {
 }
 
 // ------------------------------------------------------------ files
+export const VOICE_KIND = [["", "choose…"], ["provider_permanent", "has the ∞ sign"], ["library", "library voice, no ∞"]];
+export const SOUND_KIND = [["foley", "foley"], ["hard_fx", "effect"], ["ambience", "ambience"], ["room_tone", "room tone"], ["music", "music"], ["motif", "motif"]];
+// Where a file comes from. Own work needs nothing else; some sources need a credit.
+export function sourceFields(terms, start = "") {
+  const t = field("terms", "Where it comes from", { options: [["", "choose…"], ...terms.map(x => [x.id, (x.id === "own" ? "my own work or recording" : x.source)])], value: start }), c = field("credit", "Credit to show (name, title, link)", { size: 34 });
+  const on = () => { c.el.hidden = !terms.find(x => x.id === t.get())?.attribution_required; };
+  t.input.addEventListener("change", on); on();
+  return [t, c];
+}
+// Everything known about one stored file, fetched when opened.
+export function fileInfo(aid) {
+  const box = h("div"), d = h("details.fileinfo", {}, h("summary", {}, "About this file"), box);
+  const load = async () => {
+    const f = await api("asset/" + aid), [t, c] = sourceFields(f.terms);
+    box.replaceChildren(facts({ Came: { api_image: "by API", api_audio: "by API", manual_video: "by hand", manual_audio: "by hand", authored: "by hand", recorded: "own recording", licensed: "from a licensed source", rendered: "rendered by the studio", derived: "made by the studio from another file" }[f.origin] || f.origin, Provider: f.provider, Model: f.model, Size: f.size, Seconds: f.seconds ? f.seconds.toFixed(2) : null, Stored: when(f.created), "In use as": f.current_in.join(", "), Source: f.licence ? f.licence.source + (f.licence.verified_by ? "" : " (terms not confirmed yet, see Library)") : "not recorded", Credit: f.licence?.attribution_text }),
+      h("p.small.mono.faint", {}, f.path), f.exists ? null : h("p", {}, tag("bad", "missing"), " This file is not on the disk. Restore it from a copy (Backup page)."),
+      h("div.row", {}, act("Show in folder", () => post("reveal", { asset: aid }), { cls: "quiet", stay: true }), f.licence ? null : [t.el, c.el, act("Record the source", async () => { await post(`asset/${aid}/licence`, { terms: t.get(), credit: c.get() }); await load(); }, { stay: true, done: "Recorded" })]));
+  };
+  d.addEventListener("toggle", () => { if (d.open && !box.firstChild) load().catch(e => { box.textContent = e.message; }); });
+  return d;
+}
 export function fileDrop(label, accept, send, fields = []) {
   const st = h("span.small.dim", { role: "status" }), inp = h("input", { type: "file", accept, "aria-label": label });
   const run = async f => {
     if (!f) return;
-    st.textContent = `Importing and checking ${f.name}…`; box.classList.remove("over");
+    const t0 = Date.now(), say = () => { st.textContent = `Storing and checking ${f.name} on this computer… ${Math.round((Date.now() - t0) / 1000)} s`; }, tick = setInterval(say, 500); say(); box.classList.remove("over"); inp.disabled = true;
     const fd = new FormData(); fd.append("file", f); for (const x of fields) fd.append(x.name, x.get());
-    try { await send(fd, f); toast("Imported and checked"); await refresh(); } catch (e) { st.textContent = e.message; toast(e.message, true); } finally { inp.value = ""; }
+    try { await send(fd, f); clearInterval(tick); toast("Stored and checked. It waits for your judgement."); inp.value = ""; await refresh(); } catch (e) { clearInterval(tick); st.textContent = e.message + " Nothing was stored; you can try again."; toast(e.message, true); } finally { clearInterval(tick); inp.disabled = false; inp.value = ""; }
   };
   inp.addEventListener("change", () => run(inp.files[0]));
   const box = h("div.drop", {}, h("div.row", {}, h("b", {}, label), inp, h("span.small.faint", {}, "or drop a file here")), fields.length ? h("div.row.gap", {}, fields.map(f => f.el)) : null, st);
   box.addEventListener("dragover", e => { e.preventDefault(); box.classList.add("over"); });
   box.addEventListener("dragleave", () => box.classList.remove("over"));
-  box.addEventListener("drop", e => { e.preventDefault(); run(e.dataTransfer.files[0]); });
+  box.addEventListener("drop", e => { e.preventDefault(); e.stopPropagation(); run(e.dataTransfer.files[0]); });
   return box;
 }
 export const picture = (id, alt, capText) => h("figure", {}, h("a", { href: media(id), target: "_blank", title: "Open full size" }, h("img", { src: media(id), loading: "lazy", alt })), capText ? h("figcaption", {}, capText) : null);

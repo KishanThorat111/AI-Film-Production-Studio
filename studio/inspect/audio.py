@@ -71,9 +71,13 @@ def measure(path: Path, probe: dict | None = None, expect: dict | None = None) -
         s0 = next((s for s in probe["streams"] if s["codec_type"] == "audio"), {})
         fmt = f"{s0.get('codec_name')} {s0.get('sample_rate')} Hz {int(s0.get('bit_rate') or probe['format'].get('bit_rate') or 0) // 1000} kbps"
     items.append(("clipping", "fail" if clipped > 20 else "warn" if clipped else "pass", f"{clipped} samples at full scale, peak {20 * np.log10(peak + 1e-9):.1f} dBFS"))
-    items.append(("noise floor", "pass" if floor < -55 else "warn" if floor < -42 else "fail", f"{floor:.0f} dB in the quietest parts"))
+    if expect.get("continuous"):            # ambience, room tone, music: the quiet parts are the sound itself
+        items.append(("quietest part", "pass", f"{floor:.0f} dB (a continuous sound, so not judged as noise)"))
+    else:
+        items.append(("noise floor", "pass" if floor < -55 else "warn" if floor < -42 else "fail", f"{floor:.0f} dB in the quietest parts"))
     items.append(("clicks", "pass" if clicks == 0 else "warn", f"{clicks} possible clicks"))
-    items.append(("start and end", "pass" if lead < 1 and tail < 2 else "warn", f"{lead:.2f}s before, {tail:.2f}s after"))
+    if not expect.get("continuous"):
+        items.append(("start and end", "pass" if lead < 1 and tail < 2 else "warn", f"{lead:.2f}s before, {tail:.2f}s after"))
     items.append(("DC offset", "pass" if abs(dc) < .01 else "warn", f"{dc:.4f}"))
     if expect.get("duration"):
         lo, hi = expect["duration"]

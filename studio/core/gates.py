@@ -5,7 +5,7 @@ import json
 
 import psutil
 
-from . import backup, cut, docs, edit, films, flow, images, packages, script
+from . import backup, bring, cut, docs, edit, films, flow, images, packages, script
 from .db import DB, RuleRefused, data_dir, now
 
 GATES = [("G0_script", "Script fixed"), ("G1_plan", "Production plan"), ("G2_canon", "Canon: people, places, things"), ("G3_shots", "Shot design per scene"), ("G3_images", "Image plan"), ("G4_frame_pair", "Frames of a generated shot"), ("G5_package", "Gemini package"),
@@ -108,45 +108,78 @@ def makers(db: DB, film):
     return out
 
 
+HOW = {"unknown": "look at your provider account", "pause": "your decision", "stopped": "your decision", "script": "local, free", "decision": "your decision, free", "doc": "your decision, free", "package": "your decision, free", "judge": "your eyes and ears, free", "bring": "local, free",
+       "manual:voice": "by hand on the ElevenLabs website, included credits", "manual:sound": "by hand on the ElevenLabs website, included credits", "manual:video": "by hand in the Gemini app", "cut": "watch it, free", "job": "local, free", "backup": "local, free", "agent": "uses your Claude allowance", "assemble": "local, free", "images": "paid inside your image total, or by hand"}
+
+
+def next_step(db: DB, film, needs=None) -> dict | None:
+    """The one thing to do now. What only the user can do comes first; then what can be asked for."""
+    needs = needs_you(db, film) if needs is None else needs
+    soft = [n for n in needs if not (n["kind"] == "backup" and not n["trouble"])]
+    if soft:
+        return soft[0]
+    running = db.val("select count(*) from media_job where state in('running','queued') and (film_id=? or film_id is null)", film)
+    if running:
+        return {"kind": "job", "title": "Something is running", "why": "Nothing is needed from you until it is finished. You can close this page; keep the studio's window open.", "page": "home", "how": "local", "at": None}
+    ready = [t for t in db.q("select role,count(*) n from task where film_id=? and state='ready' group by role", film)]
+    if ready:
+        return {"kind": "agent", "title": f"Start the waiting agent{'s' if len(ready) > 1 else ''}: {', '.join(t['role'] for t in ready[:3])}", "why": "Work has been asked for and waits. Starting it uses your Claude allowance; the Agents page shows how much.", "page": "agents", "how": HOW["agent"], "at": None}
+    img = next((i for i in images.image_state(db, film)["images"] if not i["approved"] and not i["waiting_for"] and (not i["target"] or i["target"]["state"] == "open")), None)
+    if img:
+        return {"kind": "images", "title": f"Make image {img['id']}", "why": "It is the next picture other pictures are built on. Generate it, or bring one in that you made elsewhere.", "page": "images", "how": HOW["images"], "at": img["id"]}
+    for m in makers(db, film):
+        if m["ready"] and not m["task"] and (not m["doc"] or m["doc"]["status"] == "returned") and m["action"] not in ("make_mix", "make_post", "make_release", "make_cut"):
+            return {"kind": "agent", "title": f"Ask for: {m['title']}", "why": f"Everything it needs exists. The {m['role']} proposes it, somebody else reviews it, you decide.", "page": "plan", "how": HOW["agent"], "at": "work"}
+    for s in scopes(db, film):
+        if s["shots"] and not s["rev"]:
+            return {"kind": "assemble", "title": f"Assemble {s['title']}", "why": "The shots are designed. A first edit with stand-ins shows what the scene is.", "page": "cut", "how": HOW["assemble"], "at": s["scope"]}
+    return needs[0] if needs else None
+
+
 def needs_you(db: DB, film) -> list[dict]:
     """Everything that waits for the user, most unblocking first. Waiting is normal; only the first group is trouble."""
     out = []
 
-    def add(p, kind, title, why, page, ref=None, trouble=False):
-        out.append({"priority": p, "kind": kind, "title": title, "why": why, "page": page, "ref": ref, "trouble": trouble})
+    def add(p, kind, title, why, page, ref=None, trouble=False, at=None):
+        """ref: what it is about. at: where on the page it is shown."""
+        out.append({"priority": p, "kind": kind, "title": title, "why": why, "page": page, "ref": ref, "trouble": trouble, "at": at, "how": HOW.get(kind, HOW["manual:" + page] if kind == "manual" else "")})
     for r in db.q("select r.id,r.capability,r.est_amount,e.unit from api_request r join spend_envelope e on e.id=r.envelope_id where r.state='unknown'"):
         add(1, "unknown", "A paid request has no answer", "It may have been charged. Check your account history, then say what you found.", "home", r["id"], True)
     for p in db.q("select * from stage_pause where film_id=? and resolution is null", film):
         add(2, "pause", f"{p['service'].capitalize()} is paused", p["reason"], "home", p["id"], True)
     for t in db.q("select * from generation_target where film_id=? and state='stopped'", film):
-        add(3, "stopped", t["title"], "All attempts are used. Look at why, then allow more or change the plan.", {"voice": "voice", "sfx": "sound", "image": "images", "video": "video"}.get(t["kind"], "review"), t["id"], True)
+        add(3, "stopped", t["title"], "All attempts are used. Look at why, then allow more or change the plan.", {"voice": "voice", "sfx": "sound", "image": "images", "video": "video"}.get(t["kind"], "review"), t["id"], True, t["ref_id"])
     if not script.current(db, film):
         add(5, "script", "Import the script", "Everything starts with it.", "script")
     for d in db.q("select id,question from decision where film_id=? and chosen is null", film):
-        add(10, "decision", d["question"][:120], "The script leaves this open; only you decide.", "script", d["id"])
+        add(10, "decision", d["question"][:120], "The script leaves this open; only you decide.", "script", d["id"], at=d["id"])
     for d in docs.listing(db, film):
         if d["status"] == "proposed" and d["gate"]:
             need = [r for r in docs.KINDS[d["kind"]]["reviewers"] if r not in {x["role"] for x in d["reviews"]}]
             if not need:
-                add(12, "doc", f"{d['kind'].replace('_', ' ').capitalize()} {'' if d['scope'] == 'film' else d['scope']}", "Reviewed and waiting for your decision.", "plan", d["id"])
+                add(12, "doc", f"{d['kind'].replace('_', ' ').capitalize()} {'' if d['scope'] == 'film' else d['scope']}", "Reviewed and waiting for your decision.", "plan", d["id"], at=d["id"])
     for kind, table, q in (("voice", "voice_package", "select id,series name from voice_package v where film_id=? and rev=(select max(rev) from voice_package x where x.film_id=v.film_id and x.series=v.series)"), ("sfx", "sfx_package", "select id,cue_id name from sfx_package v where film_id=? and rev=(select max(rev) from sfx_package x where x.cue_id=v.cue_id)")):
         for p in db.q(q, film):
             rv = packages.reviews(db, kind, p["id"])
             if not flow.live(db, packages.GATE[kind][0], p["id"]) and rv:
-                add(14, "package", p["name"], f"Reviewed ({rv[-1]['verdict'].replace('_', ' ').lower()}) and waiting for your approval.", "voice" if kind == "voice" else "sound", p["id"])
+                add(14, "package", p["name"], f"Reviewed ({rv[-1]['verdict'].replace('_', ' ').lower()}) and waiting for your approval.", "voice" if kind == "voice" else "sound", p["id"], at=p["id"] if kind == "voice" else p["name"])
     for p in db.q("select v.id,ss.shot_id from video_package v join frame_pair f on f.id=v.frame_pair_id join shot_spec ss on ss.id=f.shot_spec_id join shot sh on sh.id=ss.shot_id join scene s on s.id=sh.scene_id where s.film_id=? and v.rowid=(select max(x.rowid) from video_package x join frame_pair g on g.id=x.frame_pair_id join shot_spec s2 on s2.id=g.shot_spec_id where s2.shot_id=ss.shot_id)", film):
         if not flow.live(db, "G5_package", p["id"]) and packages.reviews(db, "video", p["id"]):
-            add(14, "package", f"Gemini package for {p['shot_id']}", "Reviewed and waiting for your approval.", "video", p["id"])
-    for a in db.q("select a.id,t.title,t.kind,a.created_at from attempt a join generation_target t on t.id=a.target_id where t.film_id=? and a.outcome='pending' and a.result_asset_id is not null and t.kind<>'inspection'", film):
-        add(16, "judge", a["title"], "A result is here. Judge it.", {"image": "images", "video": "review", "voice": "voice", "sfx": "sound"}[a["kind"]], a["id"])
+            add(14, "package", f"Gemini package for {p['shot_id']}", "Reviewed and waiting for your approval.", "video", p["id"], at=p["shot_id"])
+    for a in db.q("select a.id,t.title,t.kind,t.ref_id,a.result_asset_id,a.created_at from attempt a join generation_target t on t.id=a.target_id where t.film_id=? and a.outcome='pending' and a.result_asset_id is not null and t.kind<>'inspection'", film):
+        add(16, "judge", a["title"], "A result is here. Judge it.", {"image": "images", "video": "review", "voice": "voice", "sfx": "sound"}[a["kind"]], a["id"], at=a["result_asset_id"] if a["kind"] == "video" else a["ref_id"])
     for t in db.q("select * from manual_task where film_id=? and state='waiting'", film):
-        add(20, "manual", {"voice": "Record or generate a voice package by hand", "sfx": "Make a sound by hand", "video": "Generate a clip in the Gemini app"}[t["kind"]], "Waiting has no deadline.", {"voice": "voice", "sfx": "sound", "video": "video"}[t["kind"]], t["package_id"])
+        add(20, "manual", {"voice": "Record or generate a voice package by hand", "sfx": "Make a sound by hand", "video": "Generate a clip in the Gemini app"}[t["kind"]], "Waiting has no deadline.", {"voice": "voice", "sfx": "sound", "video": "video"}[t["kind"]], t["package_id"],
+            at=t["package_id"] if t["kind"] == "voice" else db.val("select cue_id from sfx_package where id=?", t["package_id"]) if t["kind"] == "sfx" else db.val("select ss.shot_id from video_package v join frame_pair f on f.id=v.frame_pair_id join shot_spec ss on ss.id=f.shot_spec_id where v.id=?", t["package_id"]))
     for s in scopes(db, film):
         cur = edit.latest(db, film, s["scope"])
         if cur and cur["status"] == "draft" and db.one("select 1 from render r join timeline_rev t on t.id=r.timeline_rev_id where t.cut_rev_id=? and r.kind='review'", cur["id"]):
-            add(22, "cut", f"{s['title']}: revision {cur['rev']}", "Rendered and waiting for your decision.", "cut", cur["id"])
+            add(22, "cut", f"{s['title']}: revision {cur['rev']}", "Rendered and waiting for your decision.", "cut", cur["id"], at=s["scope"])
     for j in db.q("select id,kind,error from media_job where state='interrupted' and (film_id=? or film_id is null)", film):
         add(8, "job", f"A {j['kind']} was interrupted", "It can continue from the last finished part.", "home", j["id"])
+    n = bring.count(film)
+    if n:
+        add(15, "bring", f"{n} file{'s' if n > 1 else ''} waiting to be placed", "You dropped them; say where they belong.", "bring")
     b = backup.state(db)
     if b["level"] != "good":
         add(4 if b["level"] == "bad" else 30, "backup", "No recent copy of your work" if b["level"] == "bad" else "Only one other drive holds a copy", "Make a copy on the Backup page." if b["level"] == "bad" else "Add a second place, for example another external drive.", "backup", None, b["level"] == "bad")
@@ -178,7 +211,8 @@ def progress(db: DB, film):
 def status(db: DB, film, app_state):
     m = psutil.virtual_memory()
     st = cut.last_status(db, film)
-    return {"film": db.one("select id,title,status,logline,is_benchmark,fps_num,width,height from film where id=?", film), "modes": {s: flow.mode(db, film, s) for s in ("voice", "sfx", "stills", "inspection", "video")}, "needs_you": needs_you(db, film), "progress": progress(db, film),
+    need = needs_you(db, film)
+    return {"next": next_step(db, film, need), "film": db.one("select id,title,status,logline,is_benchmark,fps_num,width,height from film where id=?", film), "modes": {s: flow.mode(db, film, s) for s in ("voice", "sfx", "stills", "inspection", "video")}, "needs_you": need, "progress": progress(db, film),
             "stand_ins": sorted(k for k, v in st.items() if v not in FINISHED), "shots": [{"code": s["code"], "tier": s["tier"], "purpose": s["spec"]["purpose"], "technique": s["technique"], "now": s["now"]} for s in shots(db, film)["shots"]], "parts": st,
             "pauses": [{**p, "error": json.loads(p["error_json"]), "options": json.loads(p["options_json"])} for p in db.q("select * from stage_pause where film_id=? and resolution is null", film)],
             "waiting": db.q("select * from manual_task where film_id=? and state='waiting'", film), "unknown": db.q("select r.id,r.capability,r.est_amount,r.created_at,r.provider_job_id,e.unit,p.surface from api_request r join spend_envelope e on e.id=r.envelope_id join provider_profile p on p.id=r.profile_id where r.state='unknown'"),
