@@ -9,9 +9,9 @@ private/
 .env*
 AI_Film_Production_Studio_*.md
 # other assistants' local settings
-.codex/
-.agents/
-AGENTS.md
+/.codex/
+/.agents/
+/AGENTS.md
 # programs and leftovers
 .venv/
 __pycache__/
